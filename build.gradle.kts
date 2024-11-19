@@ -1,24 +1,53 @@
 plugins {
-    id("java")
+    java
+    id("org.springframework.boot") version "3.3.5"
+    id("io.spring.dependency-management") version "1.1.6"
+    id("org.graalvm.buildtools.native") version "0.10.3"
 }
 
 group = "io.sommers"
 version = "1.0-SNAPSHOT"
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom(configurations.annotationProcessor.get())
+    }
+}
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+    annotationProcessor("org.hibernate.validator:hibernate-validator")
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
+
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-quartz")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+
+    implementation("org.hibernate.validator:hibernate-validator")
     implementation("com.discord4j:discord4j-core:3.2.5")
-    implementation("com.typesafe:config:1.4.3")
-    implementation("org.slf4j:slf4j-api:2.0.16")
-    implementation("org.slf4j:slf4j-simple:2.0.16")
+    implementation("com.github.twitch4j:twitch4j:1.20.0")
 }
 
-tasks.test {
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.modulith:spring-modulith-bom:1.2.4")
+    }
+}
+
+tasks.withType<Test> {
     useJUnitPlatform()
 }

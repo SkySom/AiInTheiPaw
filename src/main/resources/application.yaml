@@ -1,0 +1,10 @@
+discord:
+  enabled: "${discord:false}"
+
+twitch:
+  enabled: "${twitch:true}"
+  command-prefix: "!"
+  event-callback-domain: "https://relaxing-sponge-cuddly.ngrok-free.app"
+
+server:
+  port: 9000
