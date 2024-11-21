@@ -1,6 +1,6 @@
-package io.sommers.ai.model.service;
+package io.sommers.ai.service;
 
-import io.sommers.ai.model.IChannel;
+import io.sommers.ai.model.channel.IChannel;
 import io.sommers.ai.model.IMessage;
 import org.jetbrains.annotations.Nullable;
 import reactor.core.publisher.Mono;

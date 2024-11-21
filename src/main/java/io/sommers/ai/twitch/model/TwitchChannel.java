@@ -1,20 +1,22 @@
 package io.sommers.ai.twitch.model;
 
-import io.sommers.ai.model.IChannel;
+import io.sommers.ai.model.channel.IChannel;
 import io.sommers.ai.model.IMessage;
+import io.sommers.ai.model.ProviderId;
+import io.sommers.ai.twitch.TwitchConstants;
 import reactor.core.publisher.Mono;
 
 public class TwitchChannel implements IChannel {
     private final TwitchMessageService twitchMessageService;
-    private final String broadcasterId;
+    private final ProviderId broadcasterId;
 
     public TwitchChannel(TwitchMessageService twitchMessageService, String broadcasterId) {
         this.twitchMessageService = twitchMessageService;
-        this.broadcasterId = broadcasterId;
+        this.broadcasterId = new ProviderId(TwitchConstants.PROVIDER, broadcasterId);
     }
 
     @Override
-    public Mono<String> replyTo(IMessage message) {
+    public Mono<String> sendMessage(IMessage message) {
         return this.twitchMessageService.sendToChannel(
                 this,
                 message
@@ -22,12 +24,7 @@ public class TwitchChannel implements IChannel {
     }
 
     @Override
-    public String getId() {
+    public ProviderId getId() {
         return this.broadcasterId;
-    }
-
-    @Override
-    public String getService() {
-        return "twitch";
     }
 }

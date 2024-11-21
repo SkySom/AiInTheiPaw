@@ -1,7 +1,6 @@
 package io.sommers.ai.command.sprint;
 
-import io.sommers.ai.model.IChannel;
-import io.sommers.ai.model.Message;
+import io.sommers.ai.model.channel.IChannel;
 import io.sommers.ai.model.command.ICommand;
 import io.sommers.ai.model.command.ICommandOption;
 import org.springframework.stereotype.Component;

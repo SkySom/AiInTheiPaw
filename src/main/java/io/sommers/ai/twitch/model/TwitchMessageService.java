@@ -3,8 +3,8 @@ package io.sommers.ai.twitch.model;
 import com.github.twitch4j.helix.domain.ChatMessage;
 import com.github.twitch4j.helix.domain.SentChatMessage;
 import com.github.twitch4j.helix.domain.SentChatMessageWrapper;
-import io.sommers.ai.model.IChannel;
-import io.sommers.ai.model.service.IMessageService;
+import io.sommers.ai.model.channel.IChannel;
+import io.sommers.ai.service.IMessageService;
 import io.sommers.ai.twitch.TwitchConfiguration;
 import io.sommers.ai.twitch.TwitchService;
 import io.sommers.ai.model.IMessage;
@@ -34,7 +34,7 @@ public class TwitchMessageService implements IMessageService {
                     .sendChatMessage(
                             null,
                             new ChatMessage(
-                                    channel.getId(),
+                                    channel.getId().id(),
                                     twitchConfiguration.getBotId(),
                                     message.getText(),
                                     replyTo

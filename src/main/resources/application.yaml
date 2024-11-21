@@ -8,3 +8,23 @@ twitch:
 
 server:
   port: 9000
+
+spring:
+  cloud:
+    gcp:
+      project-id: "aiintheipaw"
+      firestore:
+        project-id: "aiintheipaw"
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  cloud:
+    gcp:
+      firestore:
+        emulator:
+          enabled: true
+        host-port: "localhost:9098"
