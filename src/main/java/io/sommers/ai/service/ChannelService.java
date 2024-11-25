@@ -31,7 +31,7 @@ public class ChannelService {
         }
     }
 
-    @Cacheable(value = "channelDataValue", key = "")
+    @Cacheable(value = "channelDataValue")
     public Mono<ChannelDataValue> getChannelDataValue(ProviderId channelId, String name) {
         return this.channelDataRepository.findById(channelId.asDocumentKey())
                 .flatMap(channelData -> {

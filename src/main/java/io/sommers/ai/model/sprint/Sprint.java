@@ -1,10 +1,9 @@
-package io.sommers.ai.command.sprint;
+package io.sommers.ai.model.sprint;
 
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.annotation.DocumentId;
 import com.google.cloud.spring.data.firestore.mapping.UpdateTime;
 import io.sommers.ai.model.ProviderId;
-import org.springframework.data.annotation.CreatedDate;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -33,15 +32,16 @@ public class Sprint {
     }
 
     public Sprint(
-            Duration duration,
+            Duration signUpDuration,
+            Duration inProgressDuration,
             ProviderId channelId
     ) {
         this.startTime = Timestamp.of(Date.from(Instant.now()
-                .plus(Duration.of(1, ChronoUnit.MINUTES))
+                .plus(signUpDuration)
         ));
         this.endTime = Timestamp.of(Date.from(Instant.now()
-                .plus(Duration.of(1, ChronoUnit.MINUTES))
-                .plus(duration)
+                .plus(signUpDuration)
+                .plus(inProgressDuration)
         ));
         this.channelId = channelId;
         this.status = SprintStatus.SIGN_UP;

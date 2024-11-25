@@ -1,9 +1,11 @@
-package io.sommers.ai.command.sprint;
+package io.sommers.ai.model.sprint;
+
+import reactor.core.publisher.Mono;
 
 public enum SprintStatus {
     SIGN_UP("Sign Up", true, false),
     IN_PROGRESS("In Progress", true, false),
-    WAITING_COUNTS("Waiting Counts", false, true),
+    AWAITING_COUNTS("Awaiting Counts", false, true),
     COMPLETED("Completed", false, true);
 
     private final String name;
@@ -26,5 +28,15 @@ public enum SprintStatus {
 
     public boolean isAllowCounts() {
         return allowCounts;
+    }
+
+    public static Mono<SprintStatus> fromString(String name) {
+        for (SprintStatus status : SprintStatus.values()) {
+            if (status.getName().equalsIgnoreCase(name)) {
+                return Mono.just(status);
+            }
+        }
+
+        return Mono.error(new IllegalArgumentException("Invalid sprint status: " + name));
     }
 }

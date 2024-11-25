@@ -3,27 +3,19 @@ package io.sommers.ai.command.sprint;
 import io.sommers.ai.model.channel.IChannel;
 import io.sommers.ai.model.command.ICommand;
 import io.sommers.ai.model.command.ICommandOption;
-import io.sommers.ai.service.SprintService;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 @Component
-public class StartSprintCommand implements ICommand {
-
-    private final SprintService sprintService;
-
-    public StartSprintCommand(SprintService sprintService) {
-        this.sprintService = sprintService;
-    }
-
+public class JoinSprintCommand implements ICommand {
     @Override
     public String getName() {
-        return "startSprint";
+        return "wordsSprint";
     }
 
     @Override
     public String getDescription() {
-        return "Starts a Writing Sprint";
+        return "Join an active Sprint with previous word count";
     }
 
     @Override
@@ -33,6 +25,6 @@ public class StartSprintCommand implements ICommand {
 
     @Override
     public Mono<Void> run(IChannel channel) {
-        return this.sprintService.setSprintToSignUp(channel);
+        return null;
     }
 }
