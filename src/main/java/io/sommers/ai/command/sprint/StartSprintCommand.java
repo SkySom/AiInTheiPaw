@@ -4,6 +4,8 @@ import io.sommers.ai.model.channel.IChannel;
 import io.sommers.ai.model.command.ICommand;
 import io.sommers.ai.model.command.ICommandOption;
 import io.sommers.ai.service.SprintService;
+import io.vavr.collection.Array;
+import io.vavr.collection.Map;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -27,12 +29,12 @@ public class StartSprintCommand implements ICommand {
     }
 
     @Override
-    public ICommandOption[] getOptions() {
-        return new ICommandOption[0];
+    public Array<ICommandOption<?>> getOptions() {
+        return Array.empty();
     }
 
     @Override
-    public Mono<Void> run(IChannel channel) {
+    public Mono<Void> run(IChannel channel, Map<String, Object> args) {
         return this.sprintService.setSprintToSignUp(channel);
     }
 }

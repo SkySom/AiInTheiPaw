@@ -35,7 +35,7 @@ public class SprintService {
     public Mono<Void> setSprintToSignUp(IChannel channel) {
         return this.createSprint(new Sprint(
                         this.sprintConfiguration.getSignUpDuration(),
-                        this.sprintConfiguration.getInProgressionDuration(),
+                        this.sprintConfiguration.getInProgressDuration(),
                         channel.getId()
                 ))
                 .flatMap(sprint -> channel.sendMessage(messageBuilder -> messageBuilder.withKey("sprint.sign_up")

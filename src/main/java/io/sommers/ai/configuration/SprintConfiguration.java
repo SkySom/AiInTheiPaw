@@ -7,18 +7,18 @@ import org.springframework.validation.annotation.Validated;
 import java.time.Duration;
 
 @Validated
-@ConfigurationProperties(prefix = "commands.sprint")
+@ConfigurationProperties(prefix = "command.sprint")
 public class SprintConfiguration {
     @NotNull
     private final Duration signUpDuration;
     @NotNull
-    private final Duration inProgressionDuration;
+    private final Duration inProgressDuration;
     @NotNull
     private final Duration awaitingCountsDuration;
 
-    public SprintConfiguration(Duration signUpDuration, Duration inProgressionDuration, Duration awaitingCountsDuration) {
+    public SprintConfiguration(Duration signUpDuration, Duration inProgressDuration, Duration awaitingCountsDuration) {
         this.signUpDuration = signUpDuration;
-        this.inProgressionDuration = inProgressionDuration;
+        this.inProgressDuration = inProgressDuration;
         this.awaitingCountsDuration = awaitingCountsDuration;
     }
 
@@ -26,8 +26,8 @@ public class SprintConfiguration {
         return signUpDuration;
     }
 
-    public Duration getInProgressionDuration() {
-        return inProgressionDuration;
+    public Duration getInProgressDuration() {
+        return inProgressDuration;
     }
 
     public Duration getAwaitingCountsDuration() {

@@ -6,3 +6,10 @@ twitch:
   oauth-secret: "secret"
   event-sub-secret: "secret"
   event-callback-domain: "localhost:9000"
+  bot-id: "botId"
+
+command:
+  sprint:
+    awaiting-counts-duration: PT3S
+    in-progress-duration: PT3S
+    sign-up-duration: PT3S

@@ -48,6 +48,7 @@ dependencies {
     implementation("com.discord4j:discord4j-core:3.2.5")
     implementation("com.github.twitch4j:twitch4j:1.20.0")
     implementation("org.cache2k:cache2k-api")
+    implementation("io.vavr:vavr:0.10.5")
 
 }
 
