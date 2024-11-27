@@ -32,7 +32,7 @@ public enum SprintStatus {
 
     public static Mono<SprintStatus> fromString(String name) {
         for (SprintStatus status : SprintStatus.values()) {
-            if (status.getName().equalsIgnoreCase(name)) {
+            if (status.name().equalsIgnoreCase(name)) {
                 return Mono.just(status);
             }
         }

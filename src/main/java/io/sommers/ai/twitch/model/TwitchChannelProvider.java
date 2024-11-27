@@ -1,7 +1,7 @@
 package io.sommers.ai.twitch.model;
 
 import io.sommers.ai.model.channel.IChannel;
-import io.sommers.ai.service.IChannelProvider;
+import io.sommers.ai.provider.IChannelProvider;
 import reactor.core.publisher.Mono;
 
 public class TwitchChannelProvider implements IChannelProvider {

@@ -1,6 +1,6 @@
 package io.sommers.ai.service;
 
-import io.sommers.ai.model.IMessage;
+import io.sommers.ai.model.message.IMessage;
 import io.sommers.ai.model.channel.IChannel;
 import io.sommers.ai.model.messagebuilder.MessageBuilder;
 import org.jetbrains.annotations.NotNull;

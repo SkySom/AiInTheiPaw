@@ -1,8 +1,9 @@
 package io.sommers.ai.twitch.model;
 
-import io.sommers.ai.model.IUser;
+import io.sommers.ai.model.user.IUser;
 import io.sommers.ai.model.messagebuilder.MessageBuilder;
 import io.sommers.ai.twitch.TwitchConfiguration;
+import io.sommers.ai.util.MessageBuilderFunction;
 
 public class TwitchMessageBuilder extends MessageBuilder {
     private final TwitchConfiguration twitchConfiguration;
@@ -19,11 +20,6 @@ public class TwitchMessageBuilder extends MessageBuilder {
 
     @Override
     public MessageBuilder withUserArg(IUser user) {
-        return this;
-    }
-
-    @Override
-    public MessageBuilder withMessageArg(MessageBuilder subMessage) {
         return this;
     }
 }

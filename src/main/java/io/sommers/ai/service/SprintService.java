@@ -2,8 +2,9 @@ package io.sommers.ai.service;
 
 import io.sommers.ai.configuration.SprintConfiguration;
 import io.sommers.ai.job.UpdateSprintStatusJob;
-import io.sommers.ai.model.Message;
+import io.sommers.ai.model.ProviderId;
 import io.sommers.ai.model.channel.IChannel;
+import io.sommers.ai.model.message.IReceivedMessage;
 import io.sommers.ai.model.sprint.Sprint;
 import io.sommers.ai.model.sprint.SprintStatus;
 import io.sommers.ai.repository.ISprintRepository;
@@ -16,6 +17,8 @@ import reactor.core.publisher.Mono;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.List;
+import java.util.OptionalLong;
 
 @Service
 public class SprintService {
@@ -32,15 +35,20 @@ public class SprintService {
         this.sprintConfiguration = sprintConfiguration;
     }
 
-    public Mono<Void> setSprintToSignUp(IChannel channel) {
+    public Mono<Void> setSprintToSignUp(IReceivedMessage message) {
+        IChannel channel = message.getChannel();
         return this.createSprint(new Sprint(
                         this.sprintConfiguration.getSignUpDuration(),
                         this.sprintConfiguration.getInProgressDuration(),
                         channel.getId()
                 ))
-                .flatMap(sprint -> channel.sendMessage(messageBuilder -> messageBuilder.withKey("sprint.sign_up")
-                                        .withArg(this.sprintConfiguration.getSignUpDuration().toString())
+                .flatMap(sprint -> message.replyTo(messageBuilder -> messageBuilder.withKey("sprint.sign_up")
+                                        .withMessageArg(durationMessageBuilder -> durationMessageBuilder.withKey("duration")
+                                                .withArg(Math.floor(this.sprintConfiguration.getSignUpDuration().getSeconds() / 60F))
+                                                .withArg(this.sprintConfiguration.getSignUpDuration().getSeconds() % 60)
+                                        )
                                         .withCommandArg("joinSprint")
+                                        .withCommandArg("joinSprint <number>")
                                 )
                                 .then(scheduleSprintStatusUpdate(sprint, SprintStatus.IN_PROGRESS, sprint.getStartTime().toDate()))
                 )
@@ -52,7 +60,7 @@ public class SprintService {
         try {
             scheduler.scheduleJob(
                     JobBuilder.newJob(UpdateSprintStatusJob.class)
-                            .usingJobData("sprintId", sprint.getId())
+                            .usingJobData("sprintId", sprint.getDocumentId())
                             .usingJobData("nextSprintStatus", nextStatus.name())
                             .build(),
                     TriggerBuilder.newTrigger()
@@ -81,7 +89,12 @@ public class SprintService {
     public Mono<String> setSprintToInProgress(Sprint sprint) {
         if (sprint.getStatus() == SprintStatus.SIGN_UP) {
             return this.channelService.getChannel(sprint.getChannelId())
-                    .flatMap(channel -> channel.sendMessage(new Message("The Sprint starts now and runs for 20 minutes")))
+                    .flatMap(channel -> channel.sendMessage(messageBuilder -> messageBuilder.withKey("sprint.in_progress")
+                            .withMessageArg(durationMessageBuilder -> durationMessageBuilder.withKey("duration")
+                                    .withArg(Math.floor(this.sprintConfiguration.getSignUpDuration().getSeconds() / 60F))
+                                    .withArg(this.sprintConfiguration.getSignUpDuration().getSeconds() % 60)
+                            )
+                    ))
                     .flatMap(messageId -> this.scheduleSprintStatusUpdate(sprint, SprintStatus.AWAITING_COUNTS, sprint.getEndTime().toDate())
                             .then(Mono.just(messageId))
                     );
@@ -93,7 +106,7 @@ public class SprintService {
     public Mono<String> setSprintToWaitingCounts(Sprint sprint) {
         if (sprint.getStatus() == SprintStatus.IN_PROGRESS) {
             return this.channelService.getChannel(sprint.getChannelId())
-                    .flatMap(channel -> channel.sendMessage(new Message("Time's up! Please give your final word count with !words. You have 3 minutes")))
+                    .flatMap(channel -> channel.sendMessage(messageBuilder -> messageBuilder.withMessage("Time's up! Please give your final word count with !words. You have 3 minutes")))
                     .flatMap(messageId -> this.scheduleSprintStatusUpdate(sprint, SprintStatus.COMPLETED, Date.from(Instant.now().plus(3, ChronoUnit.MINUTES)))
                             .then(Mono.just(messageId))
                     );
@@ -105,7 +118,7 @@ public class SprintService {
     public Mono<String> setSprintToCompleted(Sprint sprint) {
         if (sprint.getStatus() == SprintStatus.AWAITING_COUNTS) {
             return this.channelService.getChannel(sprint.getChannelId())
-                    .flatMap(channel -> channel.sendMessage(new Message("Time's up! Please give your final word count with !words. You have 3 minutes")))
+                    .flatMap(channel -> channel.sendMessage(messageBuilder -> messageBuilder.withMessage("Time's up! Please give your final word count with !words. You have 3 minutes")))
                     .flatMap(messageId -> this.scheduleSprintStatusUpdate(sprint, SprintStatus.COMPLETED, Date.from(Instant.now().plus(3, ChronoUnit.MINUTES)))
                             .then(Mono.just(messageId))
                     );
@@ -120,5 +133,28 @@ public class SprintService {
 
     public Mono<Sprint> getSprintById(String sprintId) {
         return this.sprintRepository.findById(sprintId);
+    }
+
+    public Mono<Sprint> findActiveSprint(IChannel channel) {
+        ProviderId id = channel.getId();
+        return this.sprintRepository.findByStatusInOrderByLastUpdated(
+                        List.of(SprintStatus.SIGN_UP, SprintStatus.IN_PROGRESS, SprintStatus.AWAITING_COUNTS)
+                )
+                .filter(sprint -> sprint.getStatus() != SprintStatus.COMPLETED)
+                .next();
+    }
+
+    public Mono<String> joinSprint(IReceivedMessage message, OptionalLong wordCount) {
+        return findActiveSprint(message.getChannel())
+                .flatMap(sprint -> {
+                    sprint.getStartingCounts().put(message.getUser().getProviderId().id(), wordCount.orElse(0L));
+                    return this.sprintRepository.save(sprint);
+                })
+                .flatMap(sprint -> message.replyTo(messageBuilder -> messageBuilder.withKey("sprint.joined")
+                        .withArg(wordCount.orElse(0L))
+                ))
+                .switchIfEmpty(message.replyTo(messageBuilder -> messageBuilder.withKey("sprint.not_active"))
+                        .then(Mono.empty())
+                );
     }
 }

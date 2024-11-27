@@ -3,6 +3,7 @@ package io.sommers.ai.twitch;
 import io.sommers.ai.model.command.ICommand;
 import io.sommers.ai.twitch.model.TwitchChannelProvider;
 import io.sommers.ai.twitch.model.TwitchMessageService;
+import io.sommers.ai.twitch.model.TwitchUserProvider;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
@@ -33,5 +34,10 @@ public class TwitchBeans {
     @Bean(TwitchConstants.PROVIDER)
     public TwitchChannelProvider getTwitchChannelService(TwitchMessageService twitchMessageService) {
         return new TwitchChannelProvider(twitchMessageService);
+    }
+
+    @Bean
+    public TwitchUserProvider getTwitchUserService(TwitchService twitchService) {
+        return new TwitchUserProvider(twitchService);
     }
 }

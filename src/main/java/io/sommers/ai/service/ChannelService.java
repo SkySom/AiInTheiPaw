@@ -3,6 +3,7 @@ package io.sommers.ai.service;
 import io.sommers.ai.model.ProviderId;
 import io.sommers.ai.model.channel.ChannelDataValue;
 import io.sommers.ai.model.channel.IChannel;
+import io.sommers.ai.provider.IChannelProvider;
 import io.sommers.ai.repository.IChannelDataRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;

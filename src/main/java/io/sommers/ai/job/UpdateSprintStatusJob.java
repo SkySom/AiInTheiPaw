@@ -19,7 +19,7 @@ public class UpdateSprintStatusJob implements Job {
                 .getJobDataMap();
 
         SprintStatus.fromString(jobDataMap.getString("nextSprintStatus"))
-                .flatMap(sprintStatus -> this.sprintService.getSprintById(jobDataMap.getString("nextSprintId"))
+                .flatMap(sprintStatus -> this.sprintService.getSprintById(jobDataMap.getString("sprintId"))
                         .flatMap(sprint -> this.sprintService.handleSprintStatusUpdate(sprint, sprintStatus))
                 )
                 .block();

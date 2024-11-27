@@ -1,11 +1,13 @@
 package io.sommers.ai.command.sprint;
 
-import io.sommers.ai.model.channel.IChannel;
 import io.sommers.ai.model.command.ICommand;
 import io.sommers.ai.model.command.ICommandOption;
+import io.sommers.ai.model.message.IMessage;
+import io.sommers.ai.model.message.IReceivedMessage;
 import io.sommers.ai.service.SprintService;
 import io.vavr.collection.Array;
 import io.vavr.collection.Map;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -19,22 +21,26 @@ public class StartSprintCommand implements ICommand {
     }
 
     @Override
+    @NotNull
     public String getName() {
         return "startSprint";
     }
 
     @Override
+    @NotNull
     public String getDescription() {
         return "Starts a Writing Sprint";
     }
 
     @Override
+    @NotNull
     public Array<ICommandOption<?>> getOptions() {
         return Array.empty();
     }
 
     @Override
-    public Mono<Void> run(IChannel channel, Map<String, Object> args) {
-        return this.sprintService.setSprintToSignUp(channel);
+    @NotNull
+    public Mono<Void> run(IReceivedMessage message, Map<String, Object> args) {
+        return this.sprintService.setSprintToSignUp(message);
     }
 }

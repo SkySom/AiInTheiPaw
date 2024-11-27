@@ -8,7 +8,7 @@ import io.sommers.ai.model.messagebuilder.MessageBuilder;
 import io.sommers.ai.service.IMessageService;
 import io.sommers.ai.twitch.TwitchConfiguration;
 import io.sommers.ai.twitch.TwitchService;
-import io.sommers.ai.model.IMessage;
+import io.sommers.ai.model.message.IMessage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.MessageSource;
@@ -56,12 +56,12 @@ public class TwitchMessageService implements IMessageService {
 
     @Override
     public Mono<String> sendToChannel(IChannel channel, @NotNull MessageBuilder messageBuilder) {
-        return this.sendToChannel(channel, messageBuilder.build(this.messageSource));
+        return this.sendToChannel(channel, messageBuilder.build(this::getMessageBuilder, this.messageSource));
     }
 
     @Override
     public Mono<String> sendToChannel(IChannel channel, @NotNull MessageBuilder messageBuilder, @Nullable String replyTo) {
-        return this.sendToChannel(channel, messageBuilder.build(this.messageSource), replyTo);
+        return this.sendToChannel(channel, messageBuilder.build(this::getMessageBuilder, this.messageSource), replyTo);
     }
 
     @Override

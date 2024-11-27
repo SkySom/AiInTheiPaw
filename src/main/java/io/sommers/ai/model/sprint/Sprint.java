@@ -7,7 +7,6 @@ import io.sommers.ai.model.ProviderId;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,7 +15,7 @@ import java.util.Objects;
 @SuppressWarnings("unused")
 public class Sprint {
     @DocumentId
-    private String id;
+    private String documentId;
     private Timestamp startTime;
     private Timestamp endTime;
     private ProviderId channelId;
@@ -50,12 +49,12 @@ public class Sprint {
         this.endingCounts = new HashMap<>();
     }
 
-    public String getId() {
-        return id;
+    public String getDocumentId() {
+        return documentId;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setDocumentId(String documentId) {
+        this.documentId = documentId;
     }
 
     public Timestamp getStartTime() {
@@ -127,7 +126,7 @@ public class Sprint {
         if (obj == this) return true;
         if (obj == null || obj.getClass() != this.getClass()) return false;
         var that = (Sprint) obj;
-        return Objects.equals(this.id, that.id) &&
+        return Objects.equals(this.documentId, that.documentId) &&
                 Objects.equals(this.startTime, that.startTime) &&
                 Objects.equals(this.endTime, that.endTime) &&
                 Objects.equals(this.channelId, that.channelId) &&
@@ -140,13 +139,13 @@ public class Sprint {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, startTime, endTime, channelId, status, startingCounts, endingCounts, createdAt, lastUpdated);
+        return Objects.hash(documentId, startTime, endTime, channelId, status, startingCounts, endingCounts, createdAt, lastUpdated);
     }
 
     @Override
     public String toString() {
         return "Sprint[" +
-                "id=" + id + ", " +
+                "id=" + documentId + ", " +
                 "startTime=" + startTime + ", " +
                 "endTime=" + endTime + ", " +
                 "channelId=" + channelId + ", " +

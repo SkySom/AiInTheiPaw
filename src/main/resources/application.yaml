@@ -4,17 +4,9 @@ discord:
 twitch:
   enabled: "${twitch:true}"
   command-prefix: "!"
-  event-callback-domain: "https://relaxing-sponge-cuddly.ngrok-free.app"
 
 server:
   port: 9000
-
-spring:
-  cloud:
-    gcp:
-      project-id: "aiintheipaw"
-      firestore:
-        project-id: "aiintheipaw"
 
 command:
   sprint:

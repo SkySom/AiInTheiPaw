@@ -3,8 +3,11 @@ package io.sommers.ai.twitch;
 import com.github.twitch4j.eventsub.EventSubNotification;
 import com.github.twitch4j.eventsub.domain.chat.Message;
 import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
+import io.sommers.ai.model.ProviderId;
 import io.sommers.ai.model.command.ICommand;
 import io.sommers.ai.model.command.ICommandOption;
+import io.sommers.ai.model.message.ReceivedMessage;
+import io.sommers.ai.model.user.User;
 import io.sommers.ai.twitch.model.TwitchChannel;
 import io.sommers.ai.twitch.model.TwitchMessageService;
 import io.vavr.Tuple;
@@ -38,14 +41,15 @@ public class TwitchCommandHandler {
         if (notification.getEvent() instanceof ChannelChatMessageEvent channelChatMessageEvent) {
             Message message = channelChatMessageEvent.getMessage();
             if (!message.isAction()) {
-                return tryExecuteCommand(message.getText(), channelChatMessageEvent.getBroadcasterUserId());
+                return tryExecuteCommand(message.getText(), channelChatMessageEvent.getBroadcasterUserId(),
+                        channelChatMessageEvent.getMessageId(), channelChatMessageEvent.getChatterUserId());
             }
         }
 
         return Mono.empty();
     }
 
-    public Mono<Void> tryExecuteCommand(String text, String broadcasterId) {
+    public Mono<Void> tryExecuteCommand(String text, String broadcasterId, String messageId, String chatterId) {
         Matcher matcher = this.commandPattern.matcher(text);
 
         if (matcher.find()) {
@@ -55,12 +59,19 @@ public class TwitchCommandHandler {
                     .map(command -> parseOptions(command.getOptions(), input)
                             .fold(
                                     error -> new TwitchChannel(this.twitchMessageService, broadcasterId)
-                                            .sendMessage(messageBuilder -> messageBuilder.withKey("twitch.error")
-                                                    .withArg(error)
+                                            .sendMessage(
+                                                    messageId,
+                                                    messageBuilder -> messageBuilder.withKey("twitch.error")
+                                                            .withArg(error)
                                             )
                                             .then(),
                                     args -> command.run(
-                                            new TwitchChannel(this.twitchMessageService, broadcasterId),
+                                            new ReceivedMessage(
+                                                    new ProviderId(TwitchConstants.PROVIDER, messageId),
+                                                    text,
+                                                    new TwitchChannel(this.twitchMessageService, broadcasterId),
+                                                    new User(new ProviderId(TwitchConstants.PROVIDER, chatterId))
+                                            ),
                                             args
                                     )
                             )

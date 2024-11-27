@@ -10,9 +10,6 @@
     "firestore": {
       "port": 9098
     },
-    "pubsub": {
-      "port": 9097
-    },
     "ui": {
       "enabled": true,
       "port": 9096
