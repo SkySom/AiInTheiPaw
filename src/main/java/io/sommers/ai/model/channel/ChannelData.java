@@ -8,7 +8,7 @@ import java.util.Map;
 
 public record ChannelData(
         ProviderId channelId,
-        Map<String, Object> dataValues,
+        Map<String, ChannelDataValue> dataValues,
         @UpdateTime(version = true)
         Timestamp timestamp
 ) {

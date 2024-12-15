@@ -1,9 +1,9 @@
 package io.sommers.ai.model.messagebuilder;
 
+import io.sommers.ai.model.ProviderId;
 import io.sommers.ai.model.message.BotMessage;
 import io.sommers.ai.model.message.IMessage;
 import io.sommers.ai.model.user.IUser;
-import io.sommers.ai.model.message.ReceivedMessage;
 import io.sommers.ai.util.MessageBuilderFunction;
 import org.springframework.context.MessageSource;
 
@@ -18,8 +18,11 @@ public abstract class MessageBuilder {
 
     private final List<Object> args;
 
+    private final List<MessageBuilderFunction> appendedMessages;
+
     public MessageBuilder() {
         this.args = new ArrayList<>();
+        this.appendedMessages = new ArrayList<>();
     }
 
     protected MessageBuilder addArg(Object arg) {
@@ -46,11 +49,18 @@ public abstract class MessageBuilder {
 
     public abstract MessageBuilder withUserArg(IUser user);
 
+    public abstract MessageBuilder withUserArg(ProviderId user);
+
     public MessageBuilder withMessageArg(MessageBuilderFunction subMessage) {
         return this.addArg(subMessage);
     }
 
-    public IMessage build(Supplier<MessageBuilder> messageBuilderSupplier, MessageSource messageSource) {
+    public MessageBuilder withAppendedMessage(MessageBuilderFunction appendedMessage) {
+        this.appendedMessages.add(appendedMessage);
+        return this;
+    }
+
+    private String buildString(Supplier<MessageBuilder> messageBuilderSupplier, MessageSource messageSource) {
         Object[] argArray = new Object[this.args.size()];
         for (int i = 0; i < this.args.size(); i++) {
             Object arg = this.args.get(i);
@@ -62,12 +72,31 @@ public abstract class MessageBuilder {
             }
         }
 
+        String builtMessage = null;
+
         if (messageKey != null) {
-            return new BotMessage(messageSource.getMessage(messageKey, argArray, Locale.US));
+            builtMessage = messageSource.getMessage(messageKey, argArray, Locale.US);
         } else if (message != null) {
-            return new BotMessage(message.formatted(argArray));
-        } else {
-            return new BotMessage("Error: MissingNo.");
+            builtMessage = message.formatted(argArray);
         }
+
+        if (builtMessage == null) {
+            return "Error: MissingNo.";
+        } else {
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append(builtMessage);
+
+            for (MessageBuilderFunction appendedMessage : appendedMessages) {
+                stringBuilder.append(appendedMessage.apply(messageBuilderSupplier.get())
+                        .build(messageBuilderSupplier, messageSource)
+                );
+            }
+
+            return stringBuilder.toString();
+        }
+    }
+
+    public IMessage build(Supplier<MessageBuilder> messageBuilderSupplier, MessageSource messageSource) {
+        return new BotMessage(this.buildString(messageBuilderSupplier, messageSource));
     }
 }

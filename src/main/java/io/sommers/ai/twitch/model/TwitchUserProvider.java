@@ -1,14 +1,10 @@
 package io.sommers.ai.twitch.model;
 
-import io.sommers.ai.model.ProviderId;
 import io.sommers.ai.model.user.IUser;
 import io.sommers.ai.model.user.NamedUser;
-import io.sommers.ai.model.user.User;
 import io.sommers.ai.provider.IUserProvider;
 import io.sommers.ai.twitch.TwitchConstants;
 import io.sommers.ai.twitch.TwitchService;
-import org.springframework.boot.context.properties.bind.Name;
-import org.springframework.context.annotation.Bean;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -26,7 +22,8 @@ public class TwitchUserProvider implements IUserProvider {
                 .getUsers(null, List.of(userId), null)
                 .execute()
                 .getUsers()
-                .getFirst()
+                .stream()
+                .findFirst()
         ).map(user -> new NamedUser(this.createId(user.getId()), user.getDisplayName()));
     }
 

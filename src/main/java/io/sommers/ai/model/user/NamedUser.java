@@ -10,4 +10,9 @@ public record NamedUser(
     public ProviderId getProviderId() {
         return this.id();
     }
+
+    @Override
+    public String getName() {
+        return this.displayName();
+    }
 }

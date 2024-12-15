@@ -27,8 +27,8 @@ public class TwitchBeans {
 
     @Bean
     public TwitchMessageService getTwitchMessageService(TwitchService twitchService, TwitchConfiguration twitchConfiguration,
-                                                        MessageSource messageSource) {
-        return new TwitchMessageService(twitchService, twitchConfiguration, messageSource);
+                                                        TwitchUserProvider userProvider, MessageSource messageSource) {
+        return new TwitchMessageService(twitchService, twitchConfiguration, userProvider, messageSource);
     }
 
     @Bean(TwitchConstants.PROVIDER)

@@ -19,12 +19,14 @@ import java.util.Optional;
 public class TwitchMessageService implements IMessageService {
     private final TwitchService twitchService;
     private final TwitchConfiguration twitchConfiguration;
+    private final TwitchUserProvider twitchUserProvider;
     private final MessageSource messageSource;
 
     public TwitchMessageService(TwitchService twitchService, TwitchConfiguration twitchConfiguration,
-                                MessageSource messageSource) {
+                                TwitchUserProvider twitchUserProvider, MessageSource messageSource) {
         this.twitchService = twitchService;
         this.twitchConfiguration = twitchConfiguration;
+        this.twitchUserProvider = twitchUserProvider;
         this.messageSource = messageSource;
     }
 
@@ -66,6 +68,6 @@ public class TwitchMessageService implements IMessageService {
 
     @Override
     public MessageBuilder getMessageBuilder() {
-        return new TwitchMessageBuilder(this.twitchConfiguration);
+        return new TwitchMessageBuilder(this.twitchConfiguration, this.twitchUserProvider);
     }
 }

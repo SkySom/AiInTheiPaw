@@ -2,12 +2,11 @@ package io.sommers.ai.model.command;
 
 import io.vavr.collection.Map;
 import io.vavr.control.Validation;
-import org.apache.commons.lang.math.IntRange;
 import org.apache.commons.lang.math.Range;
+import reactor.core.publisher.Mono;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.util.OptionalLong;
 
 public record NumberCommandOption(
         String name,
@@ -15,10 +14,6 @@ public record NumberCommandOption(
         boolean required,
         Range range
 ) implements ICommandOption<Number> {
-    public NumberCommandOption(String name, String description) {
-        this(name, description, false, new IntRange(Integer.MIN_VALUE, Integer.MAX_VALUE));
-    }
-
     @Override
     public String getName() {
         return this.name();
@@ -52,15 +47,29 @@ public record NumberCommandOption(
         }
     }
 
-    public OptionalLong getOptionalLong(Map<String, Object> args) {
+    public Mono<Long> getOptionalLong(Map<String, Object> args) {
         return args.get(this.getName())
                 .fold(
-                        OptionalLong::empty,
+                        Mono::empty,
                         object -> {
                             if (object instanceof Number number) {
-                                return OptionalLong.of(number.longValue());
+                                return Mono.just(number.longValue());
                             } else {
-                                return OptionalLong.empty();
+                                return Mono.empty();
+                            }
+                        }
+                );
+    }
+
+    public Mono<Long> getLong(Map<String, Object> args) {
+        return args.get(this.getName())
+                .fold(
+                        () -> Mono.error(new IllegalStateException("No value present for " + this.getName())),
+                        object -> {
+                            if (object instanceof Number number) {
+                                return Mono.just(number.longValue());
+                            } else {
+                                return Mono.error(new IllegalStateException(object + " is not valid for " + this.getName()));
                             }
                         }
                 );

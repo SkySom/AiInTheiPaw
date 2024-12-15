@@ -19,6 +19,8 @@ import io.vavr.collection.Map;
 import io.vavr.control.Option;
 import io.vavr.control.Validation;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -26,6 +28,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class TwitchCommandHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TwitchCommandHandler.class);
+
     private final Map<String, ICommand> commands;
     private final Pattern commandPattern;
     private final TwitchMessageService twitchMessageService;
@@ -41,8 +45,17 @@ public class TwitchCommandHandler {
         if (notification.getEvent() instanceof ChannelChatMessageEvent channelChatMessageEvent) {
             Message message = channelChatMessageEvent.getMessage();
             if (!message.isAction()) {
-                return tryExecuteCommand(message.getText(), channelChatMessageEvent.getBroadcasterUserId(),
-                        channelChatMessageEvent.getMessageId(), channelChatMessageEvent.getChatterUserId());
+                return tryExecuteCommand(
+                        message.getText(),
+                        channelChatMessageEvent.getBroadcasterUserId(),
+                        channelChatMessageEvent.getMessageId(),
+                        channelChatMessageEvent.getChatterUserId()
+                )
+                        .onErrorResume(throwable -> {
+                            LOGGER.error(throwable.getMessage(), throwable);
+                            return Mono.empty();
+                        })
+                        .log();
             }
         }
 

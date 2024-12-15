@@ -2,7 +2,6 @@ package io.sommers.ai.command.sprint;
 
 import io.sommers.ai.model.command.ICommand;
 import io.sommers.ai.model.command.ICommandOption;
-import io.sommers.ai.model.message.IMessage;
 import io.sommers.ai.model.message.IReceivedMessage;
 import io.sommers.ai.service.SprintService;
 import io.vavr.collection.Array;

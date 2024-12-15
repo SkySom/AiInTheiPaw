@@ -55,7 +55,6 @@ public class TwitchWebHookController {
                 if (notification.getChallenge() != null) {
                     return ResponseEntity.ok(Mono.just(notification.getChallenge()));
                 } else {
-                    LOGGER.info("Received EventSubNotification: {}", notification);
                     return ResponseEntity.ok(this.twitchCommandHandler.tryExecuteCommand(notification)
                             .thenReturn("{}")
                     );

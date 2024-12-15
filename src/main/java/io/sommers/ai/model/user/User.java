@@ -9,4 +9,9 @@ public record User(
     public ProviderId getProviderId() {
         return this.id();
     }
+
+    @Override
+    public String getName() {
+        return "Nobody";
+    }
 }

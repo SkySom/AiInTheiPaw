@@ -7,10 +7,7 @@ import io.sommers.ai.model.ProviderId;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @SuppressWarnings("unused")
 public class Sprint {
@@ -18,8 +15,9 @@ public class Sprint {
     private String documentId;
     private Timestamp startTime;
     private Timestamp endTime;
-    private ProviderId channelId;
+    private String channelId;
     private SprintStatus status;
+    private List<String> sprinters;
     private Map<String, Long> startingCounts;
     private Map<String, Long> endingCounts;
     private Timestamp createdAt;
@@ -42,9 +40,10 @@ public class Sprint {
                 .plus(signUpDuration)
                 .plus(inProgressDuration)
         ));
-        this.channelId = channelId;
+        this.channelId = channelId.asDocumentKey();
         this.status = SprintStatus.SIGN_UP;
         this.createdAt = Timestamp.now();
+        this.sprinters = new ArrayList<>();
         this.startingCounts = new HashMap<>();
         this.endingCounts = new HashMap<>();
     }
@@ -73,11 +72,11 @@ public class Sprint {
         this.endTime = endTime;
     }
 
-    public ProviderId getChannelId() {
+    public String getChannelId() {
         return channelId;
     }
 
-    public void setChannelId(ProviderId channelId) {
+    public void setChannelId(String channelId) {
         this.channelId = channelId;
     }
 
@@ -87,6 +86,23 @@ public class Sprint {
 
     public void setStatus(SprintStatus status) {
         this.status = status;
+    }
+
+    public List<String> getSprinters() {
+        return sprinters;
+    }
+
+    public void setSprinters(List<String> sprinters) {
+        this.sprinters = sprinters;
+    }
+
+    public void addSprinter(String sprinter) {
+        if (this.getSprinters() == null) {
+            this.setSprinters(new ArrayList<>());
+        }
+        if (!this.getSprinters().contains(sprinter)) {
+            this.getSprinters().add(sprinter);
+        }
     }
 
     public Map<String, Long> getStartingCounts() {
