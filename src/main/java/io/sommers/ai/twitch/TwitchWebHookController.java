@@ -1,7 +1,12 @@
 package io.sommers.ai.twitch;
 
+import com.github.philippheuer.credentialmanager.domain.OAuth2Credential;
+import com.github.twitch4j.auth.domain.TwitchScopes;
 import com.github.twitch4j.common.util.TypeConvert;
 import com.github.twitch4j.eventsub.EventSubNotification;
+import com.github.twitch4j.eventsub.EventSubTransport;
+import com.github.twitch4j.eventsub.EventSubTransportMethod;
+import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.github.twitch4j.eventsub.util.EventSubVerifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,11 +17,10 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/twitch")
@@ -25,10 +29,12 @@ public class TwitchWebHookController {
 
     private final TwitchConfiguration twitchConfiguration;
     private final TwitchCommandHandler twitchCommandHandler;
+    private final TwitchService twitchService;
 
-    public TwitchWebHookController(TwitchConfiguration twitchConfiguration, TwitchCommandHandler twitchCommandHandler) {
+    public TwitchWebHookController(TwitchConfiguration twitchConfiguration, TwitchCommandHandler twitchCommandHandler, TwitchService twitchService) {
         this.twitchConfiguration = twitchConfiguration;
         this.twitchCommandHandler = twitchCommandHandler;
+        this.twitchService = twitchService;
     }
 
     @PostMapping("/callback")
@@ -73,6 +79,33 @@ public class TwitchWebHookController {
     public ResponseEntity<Mono<String>> getOauthToken(
             @RequestParam String code
     ) {
+        OAuth2Credential oAuth2Credential = this.twitchService.getIdentityProvider()
+                .getCredentialByCode(code);
+
+        CompletableFuture.supplyAsync(() -> this.twitchService.getTwitchClient()
+                .getUsers(oAuth2Credential.getAccessToken(), null, null)
+                .execute()
+                .getUsers()
+        ).thenCompose(users -> CompletableFuture.allOf(users.stream()
+                .map(user -> CompletableFuture.supplyAsync(() -> this.twitchService.getTwitchClient()
+                        .createEventSubSubscription(
+                                null,
+                                SubscriptionTypes.CHANNEL_CHAT_MESSAGE.prepareSubscription(
+                                        builder -> builder.broadcasterUserId(user.getId())
+                                                .build(),
+                                        EventSubTransport.builder()
+                                                .callback(this.twitchConfiguration.getEventSubSecret() + "/twitch/callback")
+                                                .secret(this.twitchConfiguration.getEventSubSecret())
+                                                .method(EventSubTransportMethod.WEBHOOK)
+                                                .build()
+                                )
+                        )
+                        .execute()
+                ))
+                .toArray(CompletableFuture[]::new)
+        ));
+
+
         return ResponseEntity.ok(Mono.just("Successful Authentication"));
     }
 
@@ -83,7 +116,12 @@ public class TwitchWebHookController {
 
         exchange.getResponse()
                 .getHeaders()
-                .setLocation(getOAuthUri("channel:bot", "user:bot", "user:write:chat"));
+                .setLocation(URI.create(this.twitchService.getIdentityProvider()
+                        .getAuthenticationUrl(
+                                List.of(TwitchScopes.CHAT_CHANNEL_BOT, TwitchScopes.CHAT_USER_BOT, TwitchScopes.HELIX_USER_CHAT_WRITE),
+                                "Twitch" + UUID.randomUUID()
+                        ))
+                );
 
         return exchange.getResponse()
                 .setComplete();
@@ -96,19 +134,14 @@ public class TwitchWebHookController {
 
         exchange.getResponse()
                 .getHeaders()
-                .setLocation(getOAuthUri("channel:bot"));
+                .setLocation(URI.create(this.twitchService.getIdentityProvider()
+                        .getAuthenticationUrl(
+                                List.of(TwitchScopes.CHAT_CHANNEL_BOT),
+                                "Twitch" + UUID.randomUUID()
+                        ))
+                );
 
         return exchange.getResponse()
                 .setComplete();
-    }
-
-    public URI getOAuthUri(String... scopes) {
-        return URI.create(
-                "https://id.twitch.tv/oauth2/authorize" +
-                        "?response_type=code&client_id=" + this.twitchConfiguration.getClientId() +
-                        "&redirect_uri=" + this.twitchConfiguration.getEventCallbackDomain() + "/twitch/oauth" +
-                        "&scope=" + Arrays.stream(scopes).map(scope -> URLEncoder.encode(scope, StandardCharsets.UTF_8)).collect(Collectors.joining("%20")) +
-                        "&state=" + UUID.randomUUID()
-        );
     }
 }
