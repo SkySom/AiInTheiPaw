@@ -8,8 +8,6 @@ import com.github.twitch4j.eventsub.EventSubTransport;
 import com.github.twitch4j.eventsub.EventSubTransportMethod;
 import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.github.twitch4j.eventsub.util.EventSubVerifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,8 +23,6 @@ import java.util.concurrent.CompletableFuture;
 @RestController
 @RequestMapping("/twitch")
 public class TwitchWebHookController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TwitchWebHookController.class);
-
     private final TwitchConfiguration twitchConfiguration;
     private final TwitchCommandHandler twitchCommandHandler;
     private final TwitchService twitchService;

@@ -6,7 +6,9 @@ import com.github.twitch4j.auth.providers.TwitchIdentityProvider;
 import com.github.twitch4j.helix.TwitchHelix;
 import com.github.twitch4j.helix.TwitchHelixBuilder;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.stereotype.Component;
 
+@Component
 public class TwitchService implements InitializingBean {
     private final TwitchConfiguration twitchConfiguration;
 

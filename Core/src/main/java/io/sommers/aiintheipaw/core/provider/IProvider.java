@@ -1,6 +1,6 @@
 package io.sommers.aiintheipaw.core.provider;
 
-import io.sommers.ai.model.ProviderId;
+import io.sommers.aiintheipaw.core.util.ProviderId;
 
 public interface IProvider {
 

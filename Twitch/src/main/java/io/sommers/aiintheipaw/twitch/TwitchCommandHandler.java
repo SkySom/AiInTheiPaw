@@ -3,8 +3,13 @@ package io.sommers.aiintheipaw.twitch;
 import com.github.twitch4j.eventsub.EventSubNotification;
 import com.github.twitch4j.eventsub.domain.chat.Message;
 import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
-import io.sommers.aiintheipaw.twitch.model.TwitchChannel;
-import io.sommers.aiintheipaw.twitch.model.TwitchMessageService;
+import io.sommers.aiintheipaw.commander.command.ICommand;
+import io.sommers.aiintheipaw.commander.command.ICommandOption;
+import io.sommers.aiintheipaw.core.message.ReceivedMessage;
+import io.sommers.aiintheipaw.core.user.User;
+import io.sommers.aiintheipaw.core.util.ProviderId;
+import io.sommers.aiintheipaw.twitch.channel.TwitchChannel;
+import io.sommers.aiintheipaw.twitch.message.TwitchMessageService;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.collection.Array;
@@ -16,12 +21,14 @@ import io.vavr.control.Validation;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Component
 public class TwitchCommandHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(TwitchCommandHandler.class);
 

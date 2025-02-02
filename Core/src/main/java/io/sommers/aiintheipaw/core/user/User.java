@@ -1,7 +1,7 @@
 package io.sommers.aiintheipaw.core.user;
 
-import io.sommers.ai.model.ProviderId;
-import io.sommers.ai.model.user.IUser;
+
+import io.sommers.aiintheipaw.core.util.ProviderId;
 
 public record User(
         ProviderId id

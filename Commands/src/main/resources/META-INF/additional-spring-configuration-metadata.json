@@ -1,0 +1,19 @@
+{
+  "properties": [
+    {
+      "name": "command.sprint.sign-up-duration",
+      "type": "java.time.Duration",
+      "description": "The default time to allow for people to sign up for sprints."
+    },
+    {
+      "name": "command.sprint.in-progress-duration",
+      "type": "java.time.Duration",
+      "description": "The default time for a sprint to run."
+    },
+    {
+      "name": "command.sprint.awaiting-counts-duration",
+      "type": "java.time.Duration",
+      "description": "The default time to wait for people to submit counts after sprint has run."
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+command:
+  sprint:
+    sign-up-duration: PT1M
+    in-progress-duration: PT20M
+    awaiting-counts-duration: PT3M
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+
+command:
+  sprint:
+    sign-up-duration: PT30S
+    in-progress-duration: PT30S
+    awaiting-counts-duration: PT30S
