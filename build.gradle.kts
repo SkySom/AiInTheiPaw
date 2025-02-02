@@ -5,7 +5,6 @@ plugins {
     id("org.graalvm.buildtools.native") version "0.10.3"
 }
 
-group = "io.sommers"
 version = "1.0-SNAPSHOT"
 
 java {
@@ -56,6 +55,10 @@ dependencyManagement {
     imports {
         mavenBom("org.springframework.modulith:spring-modulith-bom:1.2.4")
     }
+}
+
+allprojects {
+    group = "io.sommers.aiintheipaw"
 }
 
 tasks.withType<Test> {
