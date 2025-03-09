@@ -9,7 +9,7 @@ import io.sommers.aiintheipaw.core.message.IMessageService;
 import io.sommers.aiintheipaw.core.messagebuilder.MessageBuilder;
 import io.sommers.aiintheipaw.twitch.TwitchConfiguration;
 import io.sommers.aiintheipaw.twitch.TwitchService;
-import io.sommers.aiintheipaw.twitch.user.TwitchUserProvider;
+import io.sommers.aiintheipaw.twitch.user.TwitchUserSourceProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.MessageSource;
@@ -22,11 +22,11 @@ import java.util.Optional;
 public class TwitchMessageService implements IMessageService {
     private final TwitchService twitchService;
     private final TwitchConfiguration twitchConfiguration;
-    private final TwitchUserProvider twitchUserProvider;
+    private final TwitchUserSourceProvider twitchUserProvider;
     private final MessageSource messageSource;
 
     public TwitchMessageService(TwitchService twitchService, TwitchConfiguration twitchConfiguration,
-                                TwitchUserProvider twitchUserProvider, MessageSource messageSource) {
+                                TwitchUserSourceProvider twitchUserProvider, MessageSource messageSource) {
         this.twitchService = twitchService;
         this.twitchConfiguration = twitchConfiguration;
         this.twitchUserProvider = twitchUserProvider;

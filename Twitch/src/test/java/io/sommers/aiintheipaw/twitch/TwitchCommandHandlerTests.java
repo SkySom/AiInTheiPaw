@@ -1,7 +1,7 @@
 package io.sommers.aiintheipaw.twitch;
 
-import io.sommers.aiintheipaw.commander.command.ICommandOption;
-import io.sommers.aiintheipaw.commander.command.NumberCommandOption;
+import io.sommers.aiintheipaw.core.commander.ICommandOption;
+import io.sommers.aiintheipaw.core.commander.NumberCommandOption;
 import io.sommers.aiintheipaw.core.util.IntRange;
 import io.vavr.collection.Array;
 import io.vavr.collection.HashMap;

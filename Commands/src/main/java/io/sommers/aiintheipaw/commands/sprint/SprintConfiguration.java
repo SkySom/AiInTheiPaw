@@ -6,6 +6,7 @@ import org.springframework.validation.annotation.Validated;
 
 import java.time.Duration;
 
+@SuppressWarnings("ConfigurationProperties")
 @Validated
 @ConfigurationProperties(prefix = "command.sprint")
 public class SprintConfiguration {

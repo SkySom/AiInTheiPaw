@@ -3,10 +3,9 @@ package io.sommers.aiintheipaw.twitch;
 import com.github.twitch4j.eventsub.EventSubNotification;
 import com.github.twitch4j.eventsub.domain.chat.Message;
 import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
-import io.sommers.aiintheipaw.commander.command.ICommand;
-import io.sommers.aiintheipaw.commander.command.ICommandOption;
+import io.sommers.aiintheipaw.core.commander.ICommand;
+import io.sommers.aiintheipaw.core.commander.ICommandOption;
 import io.sommers.aiintheipaw.core.message.ReceivedMessage;
-import io.sommers.aiintheipaw.core.user.User;
 import io.sommers.aiintheipaw.core.util.ProviderId;
 import io.sommers.aiintheipaw.twitch.channel.TwitchChannel;
 import io.sommers.aiintheipaw.twitch.message.TwitchMessageService;
@@ -85,7 +84,7 @@ public class TwitchCommandHandler {
                                                     new ProviderId(TwitchConstants.PROVIDER, messageId),
                                                     text,
                                                     new TwitchChannel(this.twitchMessageService, broadcasterId),
-                                                    new User(new ProviderId(TwitchConstants.PROVIDER, chatterId))
+                                                    null
                                             ),
                                             args
                                     )

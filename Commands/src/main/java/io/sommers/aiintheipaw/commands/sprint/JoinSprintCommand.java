@@ -1,8 +1,8 @@
 package io.sommers.aiintheipaw.commands.sprint;
 
-import io.sommers.aiintheipaw.commander.command.ICommand;
-import io.sommers.aiintheipaw.commander.command.ICommandOption;
-import io.sommers.aiintheipaw.commander.command.NumberCommandOption;
+import io.sommers.aiintheipaw.core.commander.ICommand;
+import io.sommers.aiintheipaw.core.commander.ICommandOption;
+import io.sommers.aiintheipaw.core.commander.NumberCommandOption;
 import io.sommers.aiintheipaw.core.message.IReceivedMessage;
 import io.sommers.aiintheipaw.core.util.IntRange;
 import io.vavr.collection.Array;

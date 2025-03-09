@@ -1,0 +1,14 @@
+server:
+  port: 9000
+
+spring:
+  profiles:
+    include: >
+      commands
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/aiintheipaw
+    password: password
+    username: postgres
+
+twitch:
+  command-prefix: "!"

@@ -1,9 +1,9 @@
 package io.sommers.aiintheipaw.core.message;
 
-import io.sommers.aiintheipaw.core.util.ProviderId;
 import io.sommers.aiintheipaw.core.channel.IChannel;
 import io.sommers.aiintheipaw.core.messagebuilder.MessageBuilder;
-import io.sommers.aiintheipaw.core.user.IUser;
+import io.sommers.aiintheipaw.core.user.User;
+import io.sommers.aiintheipaw.core.util.ProviderId;
 import reactor.core.publisher.Mono;
 
 import java.util.function.Function;
@@ -12,7 +12,7 @@ public record ReceivedMessage(
         ProviderId id,
         String text,
         IChannel channel,
-        IUser user
+        User user
 ) implements IReceivedMessage {
     @Override
     public String getText() {
@@ -39,7 +39,7 @@ public record ReceivedMessage(
     }
 
     @Override
-    public IUser getUser() {
+    public User getUser() {
         return this.user();
     }
 }

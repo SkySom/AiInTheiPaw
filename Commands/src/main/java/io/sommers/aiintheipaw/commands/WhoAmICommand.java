@@ -1,9 +1,10 @@
 package io.sommers.aiintheipaw.commands;
 
-import io.sommers.aiintheipaw.commander.command.ICommand;
-import io.sommers.aiintheipaw.commander.command.ICommandOption;
+import io.sommers.aiintheipaw.core.commander.ICommand;
+import io.sommers.aiintheipaw.core.commander.ICommandOption;
 import io.sommers.aiintheipaw.core.message.IReceivedMessage;
-import io.sommers.aiintheipaw.core.user.UserService;
+import io.sommers.aiintheipaw.core.user.UserSourceInfoService;
+import io.sommers.aiintheipaw.core.user.source.UserSourceService;
 import io.vavr.collection.Array;
 import io.vavr.collection.Map;
 import jakarta.validation.constraints.NotNull;
@@ -12,10 +13,10 @@ import reactor.core.publisher.Mono;
 
 @Component
 public class WhoAmICommand implements ICommand {
-    private final UserService userService;
+    private final UserSourceService userSourceService;
 
-    public WhoAmICommand(UserService userService) {
-        this.userService = userService;
+    public WhoAmICommand(UserSourceService userSourceService) {
+        this.userSourceService = userSourceService;
     }
 
     @Override
@@ -35,8 +36,8 @@ public class WhoAmICommand implements ICommand {
 
     @Override
     public @NotNull Mono<Void> run(IReceivedMessage message, Map<String, Object> args) {
-        return this.userService.getUser(message.getUser().getProviderId())
-                .flatMap(user -> message.replyTo(messageBuilder -> messageBuilder.withMessage(user.toString())))
+        //TODO Fix whoami
+        return message.replyTo(messageBuilder -> messageBuilder.withMessage("HI"))
                 .then();
     }
 }

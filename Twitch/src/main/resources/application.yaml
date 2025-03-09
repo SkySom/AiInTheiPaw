@@ -1,5 +1,0 @@
-twitch:
-  command-prefix: "!"
-
-server:
-  port: 9000

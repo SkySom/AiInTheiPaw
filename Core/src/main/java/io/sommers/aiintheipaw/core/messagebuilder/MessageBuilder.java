@@ -4,7 +4,7 @@ package io.sommers.aiintheipaw.core.messagebuilder;
 import io.sommers.aiintheipaw.core.util.ProviderId;
 import io.sommers.aiintheipaw.core.message.BotMessage;
 import io.sommers.aiintheipaw.core.message.IMessage;
-import io.sommers.aiintheipaw.core.user.IUser;
+import io.sommers.aiintheipaw.core.user.IUserSourceInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +45,7 @@ public abstract class MessageBuilder {
 
     public abstract MessageBuilder withCommandArg(String commandName);
 
-    public abstract MessageBuilder withUserArg(IUser user);
+    public abstract MessageBuilder withUserArg(IUserSourceInfo user);
 
     public abstract MessageBuilder withUserArg(ProviderId user);
 

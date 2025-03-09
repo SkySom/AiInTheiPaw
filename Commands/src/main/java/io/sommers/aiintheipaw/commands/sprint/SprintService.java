@@ -2,28 +2,37 @@ package io.sommers.aiintheipaw.commands.sprint;
 
 import io.sommers.aiintheipaw.core.channel.ChannelService;
 import io.sommers.aiintheipaw.core.channel.IChannel;
+import io.sommers.aiintheipaw.core.event.IEventService;
 import io.sommers.aiintheipaw.core.message.IReceivedMessage;
+import io.sommers.aiintheipaw.core.sprint.ISprintRepository;
+import io.sommers.aiintheipaw.core.sprint.Sprint;
+import io.sommers.aiintheipaw.core.sprint.SprintStatus;
+import io.sommers.aiintheipaw.core.util.ProviderId;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class SprintService {
     private final ChannelService channelService;
-    private final Scheduler scheduler;
+    private final IEventService eventService;
     private final ISprintRepository sprintRepository;
     private final SprintConfiguration sprintConfiguration;
 
-    public SprintService(ChannelService channelService, Scheduler scheduler, ISprintRepository sprintRepository,
+    public SprintService(ChannelService channelService, IEventService eventService, ISprintRepository sprintRepository,
                          SprintConfiguration sprintConfiguration) {
         this.channelService = channelService;
-        this.scheduler = scheduler;
+        this.eventService = eventService;
         this.sprintRepository = sprintRepository;
         this.sprintConfiguration = sprintConfiguration;
     }
@@ -43,23 +52,19 @@ public class SprintService {
                                         .withCommandArg("joinSprint")
                                         .withCommandArg("joinSprint <number>")
                                 )
-                                .then(scheduleSprintStatusUpdate(sprint, sprint.getStartTime().toDate()))
+                                .then(scheduleSprintStatusUpdate(sprint, sprint.getStartTime().toInstant()))
                 )
                 .doOnError(Throwable::printStackTrace);
 
     }
 
-    private Mono<Void> scheduleSprintStatusUpdate(Sprint sprint, Date triggerTime) {
+    private Mono<Void> scheduleSprintStatusUpdate(Sprint sprint, Instant triggerTime) {
         try {
-            scheduler.scheduleJob(
-                    JobBuilder.newJob(UpdateSprintStatusJob.class)
-                            .usingJobData("sprintId", sprint.getDocumentId())
-                            .build(),
-                    TriggerBuilder.newTrigger()
-                            .startAt(triggerTime)
-                            .build()
-            );
-            return Mono.empty();
+            return eventService.queueEvent(
+                    "sprint",
+                    triggerTime,
+                    Map.of("sprintId", sprint.getId())
+            ).then();
         } catch (Exception e) {
             return Mono.error(e);
         }
@@ -92,14 +97,16 @@ public class SprintService {
                             .retry(3)
                             .thenReturn(messageId);
                 })
-                .flatMap(messageId -> this.scheduleSprintStatusUpdate(sprint, sprint.getEndTime().toDate())
+                .flatMap(messageId -> this.scheduleSprintStatusUpdate(sprint, sprint.getEndTime().toInstant())
                         .then(Mono.just(messageId))
                 );
     }
 
     public Mono<String> setSprintToWaitingCounts(Sprint sprint) {
         sprint.setStatus(SprintStatus.AWAITING_COUNTS);
-        return this.sprintRepository.save(sprint)
+        //return this.sprintRepository.save(sprint)
+        //TODO Sprint Repository
+        return Mono.justOrEmpty(sprint)
                 .then(Mono.defer(() -> this.channelService.getChannel(new ProviderId(sprint.getChannelId()))))
                 .flatMap(channel -> channel.sendMessage(messageBuilder -> messageBuilder.withKey("sprint.awaiting_counts")
                         .withCommandArg("submitSprint <number>")
@@ -108,7 +115,7 @@ public class SprintService {
                                 .withArg(this.sprintConfiguration.getAwaitingCountsDuration().getSeconds() % 60)
                         )
                 ))
-                .flatMap(messageId -> this.scheduleSprintStatusUpdate(sprint, new Date(Instant.now().plus(this.sprintConfiguration.getAwaitingCountsDuration()).toEpochMilli()))
+                .flatMap(messageId -> this.scheduleSprintStatusUpdate(sprint, Instant.now().plus(this.sprintConfiguration.getAwaitingCountsDuration()))
                         .then(Mono.just(messageId))
                 );
     }
@@ -118,6 +125,8 @@ public class SprintService {
         return this.sprintRepository.save(sprint)
                 .flatMap(savedSprint -> {
                     List<Pair<String, Long>> sprinters = new ArrayList<>();
+                    //TODO Fix setSprintToCompleted
+                    /*
                     for (String sprinter : savedSprint.getSprinters()) {
                         Long startingCount = savedSprint.getStartingCounts()
                                 .get(sprinter);
@@ -131,19 +140,24 @@ public class SprintService {
                             sprinters.add(Pair.of(sprinter, 0L));
                         }
                     }
+
                     sprinters.sort(Comparator.comparingLong(Pair::getRight));
+                    */
                     return this.channelService.getChannel(new ProviderId(savedSprint.getChannelId()))
                             .flatMap(channel -> channel.sendMessage(messageBuilder -> {
                                 messageBuilder.withKey("sprint.completed");
                                 AtomicInteger place = new AtomicInteger(1);
-                                long seconds = savedSprint.getEndTime().getSeconds() - savedSprint.getStartTime().getSeconds();
+                                long seconds = ChronoUnit.SECONDS.between(
+                                        savedSprint.getStartTime().toInstant(),
+                                        savedSprint.getEndTime().toInstant()
+                                );
                                 double minutes = seconds / 60D;
                                 for (Pair<String, Long> pair : sprinters) {
                                     messageBuilder.withAppendedMessage(appendedMessageBuilder -> appendedMessageBuilder.withKey("sprint.wpm")
                                             .withArg(place.getAndIncrement())
-                                            .withUserArg(new ProviderId(pair.getLeft()))
-                                            .withArg(pair.getRight())
-                                            .withArg(Math.floor(pair.getRight() / minutes))
+                                            .withUserArg(new ProviderId(pair.getFirst()))
+                                            .withArg(pair.getSecond())
+                                            .withArg(Math.floor(pair.getSecond() / minutes))
                                     );
                                 }
                                 return messageBuilder;
@@ -155,7 +169,7 @@ public class SprintService {
         return this.sprintRepository.save(sprint);
     }
 
-    public Mono<Sprint> getSprintById(String sprintId) {
+    public Mono<Sprint> getSprintById(UUID sprintId) {
         return this.sprintRepository.findById(sprintId);
     }
 
@@ -164,13 +178,15 @@ public class SprintService {
                         channel.getId()
                                 .asDocumentKey(),
                         PageRequest.ofSize(1)
-                                .withSort(Sort.Direction.DESC, "createdAt")
+                                .withSort(Sort.Direction.DESC, "created_date")
                 )
                 .next();
     }
 
     public Mono<Long> getLastWordCount(ProviderId userId) {
-        return this.sprintRepository.findBySprintersContains(
+        return Mono.just(0L);
+        //TODO fix getLastWordCount
+        /*this.sprintRepository.findBySprintersContains(
                         userId.asDocumentKey(),
                         PageRequest.ofSize(5)
                                 .withSort(Sort.Direction.DESC, "createdAt")
@@ -179,12 +195,14 @@ public class SprintService {
                         .get(userId.asDocumentKey())
                 ))
                 .reduce((a, b) -> a);
+         */
     }
 
     public Mono<String> joinSprint(IReceivedMessage message, Mono<Long> wordCount) {
         return findActiveSprint(message.getChannel())
                 .flatMap(sprint -> {
                     System.out.println(sprint.toString());
+                    /*
                     final ProviderId id = message.getUser().getProviderId();
                     return wordCount.or(Mono.defer(() -> this.getLastWordCount(id)
                                     .or(Mono.just(0L)))
@@ -198,6 +216,9 @@ public class SprintService {
                                         ));
                             })
                             .switchIfEmpty(message.replyTo(messageBuilder -> messageBuilder.withKey("sprint.no_counts")));
+                     */
+                    //TODO joinSprint
+                    return Mono.just("fuck");
                 })
                 .switchIfEmpty(message.replyTo(messageBuilder -> messageBuilder.withKey("sprint.not_active")));
     }
@@ -205,6 +226,7 @@ public class SprintService {
     public Mono<String> submitWords(IReceivedMessage message, long wordCount) {
         return this.findActiveSprint(message.getChannel())
                 .flatMap(sprint -> {
+                    /*
                     String id = message.getUser().getProviderId().asDocumentKey();
                     if (sprint.getStatus() != SprintStatus.AWAITING_COUNTS) {
                         return message.replyTo(messageBuilder -> messageBuilder.withKey("sprint.invalid_status"));
@@ -215,6 +237,10 @@ public class SprintService {
                     } else {
                         return message.replyTo(messageBuilder -> messageBuilder.withKey("sprint.user_not_sprinter"));
                     }
+
+                     */
+                    //TODO Fix submitWords
+                    return Mono.just("");
                 })
                 .switchIfEmpty(message.replyTo(messageBuilder -> messageBuilder.withKey("sprint.not_active")));
     }

@@ -3,22 +3,24 @@ package io.sommers.aiintheipaw.twitch;
 import com.github.philippheuer.credentialmanager.domain.OAuth2Credential;
 import com.github.twitch4j.auth.domain.TwitchScopes;
 import com.github.twitch4j.common.util.TypeConvert;
-import com.github.twitch4j.eventsub.EventSubNotification;
-import com.github.twitch4j.eventsub.EventSubTransport;
-import com.github.twitch4j.eventsub.EventSubTransportMethod;
+import com.github.twitch4j.eventsub.*;
 import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.github.twitch4j.eventsub.util.EventSubVerifier;
+import com.github.twitch4j.helix.domain.EventSubSubscriptionList;
+import com.github.twitch4j.helix.domain.User;
+import com.github.twitch4j.helix.domain.UserList;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import rx.RxReactiveStreams;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/twitch")
@@ -72,37 +74,33 @@ public class TwitchWebHookController {
     }
 
     @GetMapping("/oauth")
-    public ResponseEntity<Mono<String>> getOauthToken(
-            @RequestParam String code
+    public ResponseEntity<Mono<String>> authenticated(
+            @RequestParam String code,
+            @RequestParam String state
     ) {
         OAuth2Credential oAuth2Credential = this.twitchService.getIdentityProvider()
                 .getCredentialByCode(code);
 
-        CompletableFuture.supplyAsync(() -> this.twitchService.getTwitchClient()
-                .getUsers(oAuth2Credential.getAccessToken(), null, null)
-                .execute()
-                .getUsers()
-        ).thenCompose(users -> CompletableFuture.allOf(users.stream()
-                .map(user -> CompletableFuture.supplyAsync(() -> this.twitchService.getTwitchClient()
-                        .createEventSubSubscription(
-                                null,
-                                SubscriptionTypes.CHANNEL_CHAT_MESSAGE.prepareSubscription(
-                                        builder -> builder.broadcasterUserId(user.getId())
-                                                .build(),
-                                        EventSubTransport.builder()
-                                                .callback(this.twitchConfiguration.getEventSubSecret() + "/twitch/callback")
-                                                .secret(this.twitchConfiguration.getEventSubSecret())
-                                                .method(EventSubTransportMethod.WEBHOOK)
-                                                .build()
-                                )
-                        )
-                        .execute()
-                ))
-                .toArray(CompletableFuture[]::new)
-        ));
+        boolean add = true;
+        String[] statePieces = state.split("_");
+        if (statePieces.length >= 3) {
+            if (statePieces[1].equals("RemoveBot")) {
+                add = false;
+            }
+        }
 
-
-        return ResponseEntity.ok(Mono.just("Successful Authentication"));
+        if (add) {
+            return ResponseEntity.ok(this.getUsers(oAuth2Credential)
+                    .flatMap(this::createEventSubSubscription)
+                    .then(Mono.just("Successfully added bot"))
+            );
+        } else {
+            return ResponseEntity.ok(this.getUsers(oAuth2Credential)
+                    .flatMap(this::getEventSubSubscriptions)
+                    .flatMap(this::deleteEventSubSubscriptions)
+                    .then(Mono.just("Successfully removed bot"))
+            );
+        }
     }
 
     @GetMapping("/authentication/self")
@@ -123,7 +121,7 @@ public class TwitchWebHookController {
                 .setComplete();
     }
 
-    @GetMapping("/authentication/channel")
+    @GetMapping("/bot/add")
     public Mono<Void> authChannel(ServerWebExchange exchange) {
         exchange.getResponse()
                 .setStatusCode(HttpStatus.FOUND);
@@ -133,11 +131,76 @@ public class TwitchWebHookController {
                 .setLocation(URI.create(this.twitchService.getIdentityProvider()
                         .getAuthenticationUrl(
                                 List.of(TwitchScopes.CHAT_CHANNEL_BOT),
-                                "Twitch" + UUID.randomUUID()
+                                "Twitch_AddBot_" + UUID.randomUUID()
                         ))
                 );
 
         return exchange.getResponse()
                 .setComplete();
+    }
+
+    @GetMapping("/bot/remove")
+    public Mono<Void> removeBot(ServerWebExchange exchange) {
+        exchange.getResponse()
+                .setStatusCode(HttpStatus.FOUND);
+
+        exchange.getResponse()
+                .getHeaders()
+                .setLocation(URI.create(this.twitchService.getIdentityProvider()
+                        .getAuthenticationUrl(
+                                List.of(TwitchScopes.CHAT_CHANNEL_BOT),
+                                "Twitch_RemoveBot_" + UUID.randomUUID()
+                        ))
+                );
+
+        return exchange.getResponse()
+                .setComplete();
+    }
+
+    private Flux<User> getUsers(OAuth2Credential oAuth2Credential) {
+        return Mono.from(RxReactiveStreams.toPublisher(this.twitchService.getTwitchClient()
+                .getUsers(oAuth2Credential.getAccessToken(), null, null)
+                .toObservable()
+        )).flatMapIterable(UserList::getUsers);
+    }
+
+    private Flux<EventSubSubscription> createEventSubSubscription(User user) {
+        return Mono.from(RxReactiveStreams.toPublisher(this.twitchService.getTwitchClient()
+                .createEventSubSubscription(
+                        null,
+                        SubscriptionTypes.CHANNEL_CHAT_MESSAGE.prepareSubscription(
+                                builder -> builder.broadcasterUserId(user.getId())
+                                        .userId(user.getId())
+                                        .build(),
+                                EventSubTransport.builder()
+                                        .callback(this.twitchConfiguration.getEventCallbackDomain() + "/twitch/callback")
+                                        .secret(this.twitchConfiguration.getEventSubSecret())
+                                        .method(EventSubTransportMethod.WEBHOOK)
+                                        .build()
+                        )
+                )
+                .toObservable()
+        )).flatMapIterable(EventSubSubscriptionList::getSubscriptions);
+    }
+
+    private Flux<EventSubSubscription> getEventSubSubscriptions(User user) {
+        return Mono.from(RxReactiveStreams.toPublisher(this.twitchService.getTwitchClient()
+                .getEventSubSubscriptions(
+                        null,
+                        null,
+                        null,
+                        user.getId(),
+                        null,
+                        null
+                )
+                .toObservable()
+        )).flatMapIterable(EventSubSubscriptionList::getSubscriptions);
+    }
+
+    private Mono<Void> deleteEventSubSubscriptions(EventSubSubscription eventSubSubscription) {
+        return Mono.from(RxReactiveStreams.toPublisher(this.twitchService.getTwitchClient()
+                .deleteEventSubSubscription(null, eventSubSubscription.getId())
+                .toObservable()
+        ));
     }
 }

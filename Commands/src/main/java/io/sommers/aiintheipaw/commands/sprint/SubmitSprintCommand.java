@@ -1,14 +1,14 @@
 package io.sommers.aiintheipaw.commands.sprint;
 
-import io.sommers.ai.model.command.ICommand;
-import io.sommers.ai.model.command.ICommandOption;
-import io.sommers.ai.model.command.NumberCommandOption;
-import io.sommers.ai.model.message.IReceivedMessage;
-import io.sommers.ai.service.SprintService;
+
+import io.sommers.aiintheipaw.core.commander.ICommand;
+import io.sommers.aiintheipaw.core.commander.ICommandOption;
+import io.sommers.aiintheipaw.core.commander.NumberCommandOption;
+import io.sommers.aiintheipaw.core.message.IReceivedMessage;
+import io.sommers.aiintheipaw.core.util.IntRange;
 import io.vavr.collection.Array;
 import io.vavr.collection.Map;
-import org.apache.commons.lang.math.IntRange;
-import org.jetbrains.annotations.NotNull;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 

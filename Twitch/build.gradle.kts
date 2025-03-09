@@ -18,7 +18,6 @@ configurations {
 }
 
 dependencies {
-    implementation(project(":Commander"))
     implementation(project(":Core"))
 
     implementation("com.github.twitch4j:twitch4j:1.20.0")
@@ -27,6 +26,9 @@ dependencies {
 
     annotationProcessor("org.hibernate.validator:hibernate-validator")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
+
+    implementation("io.reactivex:rxjava-reactive-streams:1.2.1")
 
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")

@@ -12,12 +12,13 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":Commander"))
     implementation(project(":Core"))
+    implementation(project(":EventHandler"))
 
     implementation(libs.bundles.basics)
 
     implementation("org.springframework.boot:spring-boot-starter")
+    implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
 
     testImplementation(platform("org.junit:junit-bom:${testLibs.versions.junit.get()}"))
     testImplementation("org.junit.jupiter:junit-jupiter")
