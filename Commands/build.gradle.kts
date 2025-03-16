@@ -18,7 +18,7 @@ dependencies {
     implementation(libs.bundles.basics)
 
     implementation("org.springframework.boot:spring-boot-starter")
-    implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
     testImplementation(platform("org.junit:junit-bom:${testLibs.versions.junit.get()}"))
     testImplementation("org.junit.jupiter:junit-jupiter")

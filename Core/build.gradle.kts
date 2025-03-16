@@ -17,9 +17,12 @@ dependencies {
 
 
     implementation("org.springframework.boot:spring-boot-starter")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
     implementation("org.springframework.boot:spring-boot-starter-cache")
     implementation("com.github.spotbugs:spotbugs-annotations")
+
+    implementation("com.github.ben-manes.caffeine:caffeine")
 
     runtimeOnly("org.postgresql:r2dbc-postgresql")
     runtimeOnly("org.postgresql:postgresql")

@@ -16,12 +16,14 @@ dependencies {
     implementation(project(":Core"))
     implementation(project(":Twitch"))
 
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-
     annotationProcessor("org.hibernate.validator:hibernate-validator")
     implementation("org.hibernate.validator:hibernate-validator")
+    implementation("org.hibernate.orm:hibernate-core")
 
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+
 }

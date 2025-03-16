@@ -1,48 +1,33 @@
 package io.sommers.aiintheipaw.core.user.source;
 
 import io.sommers.aiintheipaw.core.user.User;
-import jakarta.persistence.*;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.sql.Timestamp;
 import java.util.UUID;
 
-@Entity
-@Table(
-        name = "user_source",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"service", "service_id"})
-        }
-)
+@Table(name = "user_source")
 @SuppressWarnings("unused")
 public class UserSource {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    @Column(name = "service", nullable = false)
     private String service;
-    @Column(name = "service_id", nullable = false)
     private String serviceId;
     @CreatedDate
-    @Column(name = "created_date", nullable = false)
-    private Timestamp createdAt;
+    private Timestamp createdDate;
     @LastModifiedDate
-    @Column(name = "updated_date", nullable = false)
-    private Timestamp updatedAt;
-
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
-    private User user;
+    private Timestamp updatedDate;
 
     public UserSource() {
 
     }
 
-    public UserSource(String service, String serviceId, User user) {
+    public UserSource(String service, String serviceId) {
         this.service = service;
         this.serviceId = serviceId;
-        this.user = user;
     }
 
     public UUID getId() {
@@ -69,27 +54,19 @@ public class UserSource {
         this.serviceId = serviceId;
     }
 
-    public Timestamp getCreatedAt() {
-        return createdAt;
+    public Timestamp getCreatedDate() {
+        return createdDate;
     }
 
-    public void setCreatedAt(Timestamp createdAt) {
-        this.createdAt = createdAt;
+    public void setCreatedDate(Timestamp createdDate) {
+        this.createdDate = createdDate;
     }
 
-    public Timestamp getUpdatedAt() {
-        return updatedAt;
+    public Timestamp getUpdatedDate() {
+        return updatedDate;
     }
 
-    public void setUpdatedAt(Timestamp updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
+    public void setUpdatedDate(Timestamp updatedDate) {
+        this.updatedDate = updatedDate;
     }
 }

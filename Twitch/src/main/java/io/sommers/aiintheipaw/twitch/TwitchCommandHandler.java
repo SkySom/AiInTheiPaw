@@ -6,6 +6,7 @@ import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import io.sommers.aiintheipaw.core.commander.ICommand;
 import io.sommers.aiintheipaw.core.commander.ICommandOption;
 import io.sommers.aiintheipaw.core.message.ReceivedMessage;
+import io.sommers.aiintheipaw.core.user.source.UserSourceService;
 import io.sommers.aiintheipaw.core.util.ProviderId;
 import io.sommers.aiintheipaw.twitch.channel.TwitchChannel;
 import io.sommers.aiintheipaw.twitch.message.TwitchMessageService;
@@ -34,12 +35,15 @@ public class TwitchCommandHandler {
     private final Map<String, ICommand> commands;
     private final Pattern commandPattern;
     private final TwitchMessageService twitchMessageService;
+    private final UserSourceService userSourceService;
 
-    public TwitchCommandHandler(TwitchConfiguration twitchConfiguration, List<ICommand> commands, TwitchMessageService twitchMessageService) {
+    public TwitchCommandHandler(TwitchConfiguration twitchConfiguration, List<ICommand> commands,
+                                TwitchMessageService twitchMessageService, UserSourceService userSourceService) {
         this.commands = commands.stream()
                 .collect(HashMap.collector(ICommand::getName));
         this.commandPattern = Pattern.compile("^" + twitchConfiguration.getCommandPrefix() + "(?<command>\\w+)\\s*(?<commandInput>[\\s\\w+]+)*$", Pattern.CASE_INSENSITIVE);
         this.twitchMessageService = twitchMessageService;
+        this.userSourceService = userSourceService;
     }
 
     public Mono<Void> tryExecuteCommand(@NotNull EventSubNotification notification) {
@@ -79,15 +83,16 @@ public class TwitchCommandHandler {
                                                             .withArg(error)
                                             )
                                             .then(),
-                                    args -> command.run(
-                                            new ReceivedMessage(
-                                                    new ProviderId(TwitchConstants.PROVIDER, messageId),
-                                                    text,
-                                                    new TwitchChannel(this.twitchMessageService, broadcasterId),
-                                                    null
-                                            ),
-                                            args
-                                    )
+                                    args -> this.userSourceService.findByServiceAndId(TwitchConstants.PROVIDER, chatterId)
+                                            .flatMap(userSource -> command.run(
+                                                    new ReceivedMessage(
+                                                            new ProviderId(TwitchConstants.PROVIDER, messageId),
+                                                            text,
+                                                            new TwitchChannel(this.twitchMessageService, broadcasterId),
+                                                            userSource
+                                                    ),
+                                                    args
+                                            ))
                             )
                     )
                     .getOrElse(Mono.empty());

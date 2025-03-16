@@ -21,7 +21,7 @@ public class UserSourceService {
     public Mono<UserSource> findByServiceAndId(String service, String id) {
         return this.userSourceRepository.findUserSourceByServiceAndServiceId(service, id)
                 .switchIfEmpty(Mono.defer(() -> this.userRepository.save(new User())
-                        .flatMap(user -> this.userSourceRepository.save(new UserSource(service, id, user)))
+                        .flatMap(user -> this.userSourceRepository.save(new UserSource(service, id)))
                 ));
     }
 }
