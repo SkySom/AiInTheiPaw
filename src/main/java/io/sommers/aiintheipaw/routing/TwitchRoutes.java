@@ -9,17 +9,12 @@ import io.sommers.aiintheipaw.util.TwitchEventSubVerifier;
 import io.sommers.aiintheipaw.validation.MaxDuration;
 import io.sommers.aiintheipaw.validation.TwitchMessageId;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.RoutingContext;
-import io.vertx.mutiny.core.http.HttpServerRequest;
 import io.vertx.mutiny.core.http.HttpServerResponse;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.json.Json;
-import jakarta.json.JsonReader;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 
 @ApplicationScoped
@@ -54,7 +49,7 @@ public class TwitchRoutes {
                         .end();
             };
         } else {
-            return  httpServerResponse.setStatusCode(403)
+            return httpServerResponse.setStatusCode(403)
                     .end();
         }
 
@@ -62,6 +57,7 @@ public class TwitchRoutes {
     }
 
     private Uni<Void> handleNotification(JsonObject message, HttpServerResponse httpServerResponse) {
+        System.out.println(message.toString());
         return httpServerResponse.setStatusCode(204)
                 .end();
     }

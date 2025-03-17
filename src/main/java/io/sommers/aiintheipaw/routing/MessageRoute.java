@@ -6,8 +6,10 @@ import io.quarkus.vertx.web.Route.HttpMethod;
 import io.quarkus.vertx.web.RouteBase;
 import io.smallrye.mutiny.Uni;
 import io.sommers.aiintheipaw.model.request.SendMessageRequest;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.validation.Valid;
 
+@ApplicationScoped
 @RouteBase(path = "bot")
 public class MessageRoute {
     @Route(path = "message", methods = HttpMethod.POST)

@@ -28,6 +28,9 @@ dependencies {
     implementation("io.quarkus:quarkus-arc")
     implementation("io.quarkus:quarkus-jdbc-postgresql")
     implementation("io.quarkus:quarkus-cache")
+    implementation("io.quarkus:quarkus-flyway")
+
+    implementation("org.flywaydb:flyway-database-postgresql")
 
     testImplementation("io.quarkus:quarkus-junit5")
 }
