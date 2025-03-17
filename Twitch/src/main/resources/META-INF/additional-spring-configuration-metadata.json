@@ -1,9 +1,0 @@
-{
-  "properties": [
-    {
-      "name": "twitch.commandPrefix",
-      "type": "java.lang.String",
-      "description": "The Character to expect for commands."
-    }
-  ]
-}
