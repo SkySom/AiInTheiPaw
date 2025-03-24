@@ -103,7 +103,8 @@ public class TwitchRoutes {
                     .unis(channelUni, userUni)
                     .asTuple()
                     .flatMap(channelUser -> {
-                        System.out.println("User: " + userId + " Channel: " + channelId);
+                        System.out.println("User: " + userId + " " + channelUser.getItem2().getId() +
+                                " Channel: " + channelId + " " + channelUser.getItem1().getId());
                         return Uni.createFrom()
                                 .voidItem();
                     })

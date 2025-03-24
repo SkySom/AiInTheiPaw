@@ -8,7 +8,9 @@ import io.sommers.aiintheipaw.model.user.UserEntity;
 import io.sommers.aiintheipaw.model.user.UserSourceEntity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.persistence.criteria.*;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import org.hibernate.reactive.mutiny.Mutiny.SessionFactory;
 
 import java.util.Set;
@@ -18,55 +20,46 @@ public class UserSourceLogic {
     @Inject
     SessionFactory sessionFactory;
 
-    //@CacheResult(cacheName = "user")
-    public Uni<IUser> findByServiceAndId(String service, String id) {
+    @CacheResult(cacheName = "user")
+    public Uni<IUser> findByServiceAndId(String service, String userServiceId) {
         return sessionFactory.withSession(session -> {
             CriteriaBuilder criteriaBuilder = sessionFactory.getCriteriaBuilder();
-            CriteriaQuery<UserEntity> query = criteriaBuilder.createQuery(UserEntity.class);
+            CriteriaQuery<UserSourceEntity> query = criteriaBuilder.createQuery(UserSourceEntity.class);
 
-            Root<UserEntity> userEntityRoot = query.from(UserEntity.class);
-            Root<UserSourceEntity> userSourceEntityRoot = query.from(UserSourceEntity.class);
-
-            Subquery<Long> userSourceQuery = query.subquery(Long.class)
-                    .select(userSourceEntityRoot.get("id"))
-                    .where(
-                            criteriaBuilder.equal(userSourceEntityRoot.get("service"), service),
-                            criteriaBuilder.equal(userSourceEntityRoot.get("id"), id)
-                    );
-
-
+            Root<UserSourceEntity> root = query.from(UserSourceEntity.class);
             query.where(
-                    criteriaBuilder.equal(userEntityRoot.get("id"), userSourceQuery.getSelection())
-            ).select(userEntityRoot);
+                    criteriaBuilder.equal(root.get("service"), service),
+                    criteriaBuilder.equal(root.get("serviceUserId"), userServiceId)
+            );
 
             return session.createQuery(query)
                     .getSingleResultOrNull()
                     .onItem()
-                    .transformToUni(userEntity -> {
-                        if (userEntity == null) {
+                    .transformToUni(userSourceEntity -> {
+                        if (userSourceEntity == null) {
                             UserEntity newUser = new UserEntity();
 
                             return session.persist(newUser)
                                     .flatMap(ignoredUser -> {
-                                        UserSourceEntity userSourceEntity = new UserSourceEntity(
+                                        UserSourceEntity newUserSourceEntity = new UserSourceEntity(
                                                 newUser,
                                                 service,
-                                                id
+                                                userServiceId
                                         );
 
-                                        return session.persist(userSourceEntity)
+                                        return session.persist(newUserSourceEntity)
                                                 .map(ignoredSource -> {
-                                                    newUser.setUserSources(Set.of(userSourceEntity));
-                                                    return newUser;
+                                                    newUser.setUserSources(Set.of(newUserSourceEntity));
+                                                    return newUserSourceEntity;
                                                 });
                                     });
                         } else {
                             return Uni.createFrom()
-                                    .item(userEntity);
+                                    .item(userSourceEntity);
                         }
                     })
-                    .map(userEntity -> new User(
-                            userEntity.getId()
+                    .map(userSourceEntity -> new User(
+                            userSourceEntity.getUser()
                     ));
         });
     }

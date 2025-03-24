@@ -1,10 +1,10 @@
 package io.sommers.aiintheipaw.model.user;
 
 public record User(
-        long id
+        UserEntity userEntity
 ) implements IUser {
     @Override
     public long getId() {
-        return this.id();
+        return this.userEntity().getId();
     }
 }

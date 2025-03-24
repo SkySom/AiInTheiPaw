@@ -11,7 +11,7 @@ import java.sql.Timestamp;
 @SuppressWarnings("unused")
 public class UserSourceEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String service;
     @Column(name = "service_user_id")
@@ -58,8 +58,8 @@ public class UserSourceEntity {
         return serviceUserId;
     }
 
-    public void setServiceUserId(String serviceId) {
-        this.serviceUserId = serviceId;
+    public void setServiceUserId(String serviceUserId) {
+        this.serviceUserId = serviceUserId;
     }
 
     public Timestamp getCreatedAt() {
