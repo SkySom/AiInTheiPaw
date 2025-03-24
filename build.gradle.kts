@@ -24,13 +24,15 @@ dependencies {
     implementation("io.quarkus:quarkus-amazon-lambda-rest")
     implementation("io.quarkus:quarkus-logging-json")
     implementation("io.quarkus:quarkus-reactive-pg-client")
-    implementation("io.quarkus:quarkus-reactive-routes")
+    implementation("io.quarkus:quarkus-rest")
+    implementation("io.quarkus:quarkus-rest-jackson")
     implementation("io.quarkus:quarkus-arc")
     implementation("io.quarkus:quarkus-jdbc-postgresql")
     implementation("io.quarkus:quarkus-cache")
     implementation("io.quarkus:quarkus-flyway")
 
     implementation("org.flywaydb:flyway-database-postgresql")
+    implementation("io.vavr:vavr:0.10.6")
 
     testImplementation("io.quarkus:quarkus-junit5")
 }

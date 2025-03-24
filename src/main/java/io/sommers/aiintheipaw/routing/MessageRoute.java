@@ -1,19 +1,18 @@
 package io.sommers.aiintheipaw.routing;
 
-import io.quarkus.vertx.web.Body;
-import io.quarkus.vertx.web.Route;
-import io.quarkus.vertx.web.Route.HttpMethod;
-import io.quarkus.vertx.web.RouteBase;
 import io.smallrye.mutiny.Uni;
 import io.sommers.aiintheipaw.model.request.SendMessageRequest;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
 
 @ApplicationScoped
-@RouteBase(path = "bot")
+@Path("bot")
 public class MessageRoute {
-    @Route(path = "message", methods = HttpMethod.POST)
-    public Uni<Void> sendMessage(@Body @Valid SendMessageRequest sendMessageRequest) {
+    @POST
+    @Path("message")
+    public Uni<Void> sendMessage(@Valid SendMessageRequest sendMessageRequest) {
         return Uni.createFrom()
                 .voidItem();
     }

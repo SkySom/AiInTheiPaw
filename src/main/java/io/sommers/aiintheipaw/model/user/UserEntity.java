@@ -6,8 +6,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.sql.Timestamp;
 import java.util.Map;
+import java.util.Set;
 
 @Entity
+@Table(name = "\"user\"")
 @SuppressWarnings("unused")
 public class UserEntity {
 
@@ -15,17 +17,14 @@ public class UserEntity {
     @GeneratedValue
     private Long id;
     @CreationTimestamp
+    @Column(name = "created_at")
     private Timestamp createdAt;
     @UpdateTimestamp
+    @Column(name = "updated_at")
     private Timestamp updatedAt;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinTable(
-            name = "user_source",
-            joinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")}
-    )
-    @MapKey(name = "service")
-    private Map<String, UserSourceEntity> userSources;
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "user")
+    private Set<UserSourceEntity> userSources;
 
     public Long getId() {
         return id;
@@ -51,11 +50,11 @@ public class UserEntity {
         this.updatedAt = updatedAt;
     }
 
-    public Map<String, UserSourceEntity> getUserSources() {
+    public Set<UserSourceEntity> getUserSources() {
         return userSources;
     }
 
-    public void setUserSources(Map<String, UserSourceEntity> userSources) {
+    public void setUserSources(Set<UserSourceEntity> userSources) {
         this.userSources = userSources;
     }
 }

@@ -1,21 +1,35 @@
-package io.sommers.aiintheipaw.model.user;
+package io.sommers.aiintheipaw.model.channel;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.sql.Timestamp;
 
 @Entity
-@Table(name = "user_source")
+@Table(name = "channel")
 @SuppressWarnings("unused")
-public class UserSourceEntity {
+public class ChannelEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @NotNull
+    @NotBlank
+    @Size(min = 1, max = 32)
     private String service;
-    @Column(name = "service_user_id")
-    private String serviceUserId;
+    @Nullable
+    @Size(min = 1, max = 32)
+    @Column(name = "guild_id")
+    private String guildId;
+    @NotNull
+    @NotBlank
+    @Size(min = 1, max = 32)
+    @Column(name = "channel_id")
+    private String channelId;
     @CreationTimestamp
     @Column(name = "created_at")
     private Timestamp createdAt;
@@ -23,19 +37,13 @@ public class UserSourceEntity {
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity user;
-
-
-    public UserSourceEntity() {
+    public ChannelEntity() {
 
     }
 
-    public UserSourceEntity(UserEntity user, String service, String serviceUserId) {
-        this.user = user;
+    public ChannelEntity(String service, String channelId) {
         this.service = service;
-        this.serviceUserId = serviceUserId;
+        this.channelId = channelId;
     }
 
     public Long getId() {
@@ -54,12 +62,21 @@ public class UserSourceEntity {
         this.service = service;
     }
 
-    public String getServiceUserId() {
-        return serviceUserId;
+    @Nullable
+    public String getGuildId() {
+        return guildId;
     }
 
-    public void setServiceUserId(String serviceId) {
-        this.serviceUserId = serviceId;
+    public void setGuildId(@Nullable String guildId) {
+        this.guildId = guildId;
+    }
+
+    public String getChannelId() {
+        return channelId;
+    }
+
+    public void setChannelId(String channelId) {
+        this.channelId = channelId;
     }
 
     public Timestamp getCreatedAt() {
@@ -76,13 +93,5 @@ public class UserSourceEntity {
 
     public void setUpdatedAt(Timestamp updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    public UserEntity getUser() {
-        return user;
-    }
-
-    public void setUser(UserEntity user) {
-        this.user = user;
     }
 }
