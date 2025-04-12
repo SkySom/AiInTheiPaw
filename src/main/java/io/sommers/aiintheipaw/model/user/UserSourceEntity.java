@@ -1,5 +1,7 @@
 package io.sommers.aiintheipaw.model.user;
 
+import io.sommers.aiintheipaw.converter.ServiceConverter;
+import io.sommers.aiintheipaw.model.service.IService;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -13,7 +15,8 @@ public class UserSourceEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String service;
+    @Convert(converter = ServiceConverter.class)
+    private IService service;
     @Column(name = "service_user_id")
     private String serviceUserId;
     @CreationTimestamp
@@ -32,7 +35,7 @@ public class UserSourceEntity {
 
     }
 
-    public UserSourceEntity(UserEntity user, String service, String serviceUserId) {
+    public UserSourceEntity(UserEntity user, IService service, String serviceUserId) {
         this.user = user;
         this.service = service;
         this.serviceUserId = serviceUserId;
@@ -46,11 +49,11 @@ public class UserSourceEntity {
         this.id = id;
     }
 
-    public String getService() {
+    public IService getService() {
         return service;
     }
 
-    public void setService(String service) {
+    public void setService(IService service) {
         this.service = service;
     }
 

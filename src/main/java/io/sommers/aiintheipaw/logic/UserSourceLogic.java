@@ -1,7 +1,7 @@
 package io.sommers.aiintheipaw.logic;
 
-import io.quarkus.cache.CacheResult;
 import io.smallrye.mutiny.Uni;
+import io.sommers.aiintheipaw.model.service.IService;
 import io.sommers.aiintheipaw.model.user.IUser;
 import io.sommers.aiintheipaw.model.user.User;
 import io.sommers.aiintheipaw.model.user.UserEntity;
@@ -11,16 +11,15 @@ import jakarta.inject.Inject;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Root;
+import org.hibernate.reactive.mutiny.Mutiny.Session;
 import org.hibernate.reactive.mutiny.Mutiny.SessionFactory;
-
-import java.util.Set;
 
 @ApplicationScoped
 public class UserSourceLogic {
     @Inject
     SessionFactory sessionFactory;
 
-    @CacheResult(cacheName = "user")
+    //@CacheResult(cacheName = "user")
     public Uni<IUser> findByServiceAndId(IService service, String userServiceId) {
         return sessionFactory.withSession(session -> {
             CriteriaBuilder criteriaBuilder = sessionFactory.getCriteriaBuilder();
@@ -35,32 +34,23 @@ public class UserSourceLogic {
             return session.createQuery(query)
                     .getSingleResultOrNull()
                     .onItem()
-                    .transformToUni(userSourceEntity -> {
-                        if (userSourceEntity == null) {
-                            UserEntity newUser = new UserEntity();
-
-                            return session.persist(newUser)
-                                    .flatMap(ignoredUser -> {
-                                        UserSourceEntity newUserSourceEntity = new UserSourceEntity(
-                                                newUser,
-                                                service,
-                                                userServiceId
-                                        );
-
-                                        return session.persist(newUserSourceEntity)
-                                                .map(ignoredSource -> {
-                                                    newUser.setUserSources(Set.of(newUserSourceEntity));
-                                                    return newUserSourceEntity;
-                                                });
-                                    });
-                        } else {
-                            return Uni.createFrom()
-                                    .item(userSourceEntity);
-                        }
-                    })
+                    .ifNull()
+                    .switchTo(() -> createNewUser(session, service, userServiceId))
                     .map(userSourceEntity -> new User(
                             userSourceEntity.getUser()
                     ));
         });
+    }
+
+    private Uni<UserSourceEntity> createNewUser(Session session, IService service, String userServiceId) {
+        UserEntity newUser = new UserEntity();
+        UserSourceEntity userSourceEntity = new UserSourceEntity(
+                newUser,
+                service,
+                userServiceId
+        );
+
+        return session.persist(userSourceEntity)
+                .replaceWith(userSourceEntity);
     }
 }
