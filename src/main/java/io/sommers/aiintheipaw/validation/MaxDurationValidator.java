@@ -17,8 +17,11 @@ public class MaxDurationValidator implements ConstraintValidator<MaxDuration, St
             return false;
         } else {
             try {
+                Instant now = constraintValidatorContext.getClockProvider()
+                        .getClock()
+                        .instant();
                 Instant instant = Instant.parse(timestamp);
-                return Duration.between(instant, Instant.now()).compareTo(maxDuration) < 0;
+                return Duration.between(instant, now).compareTo(maxDuration) < 0;
             } catch (DateTimeParseException e) {
                 return false;
             }
