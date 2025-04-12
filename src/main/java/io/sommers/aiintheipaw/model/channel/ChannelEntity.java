@@ -1,5 +1,7 @@
 package io.sommers.aiintheipaw.model.channel;
 
+import io.sommers.aiintheipaw.converter.ServiceConverter;
+import io.sommers.aiintheipaw.model.service.IService;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -18,9 +20,8 @@ public class ChannelEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @NotNull
-    @NotBlank
-    @Size(min = 1, max = 32)
-    private String service;
+    @Convert(converter = ServiceConverter.class)
+    private IService service;
     @Nullable
     @Size(min = 1, max = 32)
     @Column(name = "guild_id")
@@ -41,11 +42,6 @@ public class ChannelEntity {
 
     }
 
-    public ChannelEntity(String service, String channelId) {
-        this.service = service;
-        this.channelId = channelId;
-    }
-
     public Long getId() {
         return id;
     }
@@ -54,11 +50,11 @@ public class ChannelEntity {
         this.id = id;
     }
 
-    public String getService() {
+    public IService getService() {
         return service;
     }
 
-    public void setService(String service) {
+    public void setService(IService service) {
         this.service = service;
     }
 

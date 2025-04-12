@@ -1,11 +1,12 @@
 package io.sommers.aiintheipaw.model.channel;
 
+import io.sommers.aiintheipaw.model.service.IService;
 import io.vavr.control.Option;
 import jakarta.annotation.Nullable;
 
 public record Channel(
         long id,
-        String service,
+        IService service,
         @Nullable String guildId,
         String channelId
 ) implements IChannel {
@@ -16,7 +17,7 @@ public record Channel(
     }
 
     @Override
-    public String getService() {
+    public IService getService() {
         return this.service();
     }
 

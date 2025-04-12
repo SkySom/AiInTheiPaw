@@ -20,7 +20,7 @@ public class ChannelLogic {
     SessionFactory sessionFactory;
 
     @CacheResult(cacheName = "channel")
-    public Uni<IChannel> findByServiceGuildIdAndChannelId(@CacheKey String service, @CacheKey String guildId, @CacheKey String channelId) {
+    public Uni<IChannel> findByServiceGuildIdAndChannelId(@CacheKey IService service, @CacheKey String guildId, @CacheKey String channelId) {
         return sessionFactory.withSession(session -> {
             CriteriaBuilder criteriaBuilder = sessionFactory.getCriteriaBuilder();
             CriteriaQuery<ChannelEntity> query = sessionFactory.getCriteriaBuilder()

@@ -21,7 +21,7 @@ public class UserSourceLogic {
     SessionFactory sessionFactory;
 
     @CacheResult(cacheName = "user")
-    public Uni<IUser> findByServiceAndId(String service, String userServiceId) {
+    public Uni<IUser> findByServiceAndId(IService service, String userServiceId) {
         return sessionFactory.withSession(session -> {
             CriteriaBuilder criteriaBuilder = sessionFactory.getCriteriaBuilder();
             CriteriaQuery<UserSourceEntity> query = criteriaBuilder.createQuery(UserSourceEntity.class);
