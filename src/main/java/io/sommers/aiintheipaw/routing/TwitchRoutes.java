@@ -6,6 +6,7 @@ import io.smallrye.mutiny.Uni;
 import io.sommers.aiintheipaw.logic.ChannelLogic;
 import io.sommers.aiintheipaw.logic.UserSourceLogic;
 import io.sommers.aiintheipaw.model.channel.IChannel;
+import io.sommers.aiintheipaw.model.service.IService;
 import io.sommers.aiintheipaw.model.user.IUser;
 import io.sommers.aiintheipaw.util.TwitchEventSubVerifier;
 import io.sommers.aiintheipaw.validation.MaxDuration;
@@ -29,6 +30,8 @@ import java.nio.charset.StandardCharsets;
 @Path("twitch")
 public class TwitchRoutes {
 
+    @Inject
+    IService twitch;
     @Inject
     ChannelLogic channelLogic;
     @Inject
@@ -91,12 +94,12 @@ public class TwitchRoutes {
             String userId = eventJson.getString("chatter_user_id");
 
             Uni<IChannel> channelUni = channelLogic.findByServiceGuildIdAndChannelId(
-                    "twitch",
+                    twitch,
                     null,
                     channelId
             );
 
-            Uni<IUser> userUni = userSourceLogic.findByServiceAndId("twitch", userId);
+            Uni<IUser> userUni = userSourceLogic.findByServiceAndId(twitch, userId);
 
             return Uni.combine()
                     .all()
@@ -104,7 +107,8 @@ public class TwitchRoutes {
                     .asTuple()
                     .flatMap(channelUser -> {
                         System.out.println("User: " + userId + " " + channelUser.getItem2().getId() +
-                                " Channel: " + channelId + " " + channelUser.getItem1().getId());
+                                " Channel: " + channelId + " " + channelUser.getItem1().getId() +
+                                " Message Id: " + eventJson.getString("message_id"));
                         return Uni.createFrom()
                                 .voidItem();
                     })
@@ -126,8 +130,9 @@ public class TwitchRoutes {
                             .build()
                     );
         } else {
-            return Uni.createFrom()
-                    .item(Response.ok(challenge)
+            String channelId = body.getString("broadcaster_user_id");
+            return this.channelLogic.findByServiceGuildIdAndChannelId(twitch, null, channelId)
+                    .replaceWith(Response.ok(challenge)
                             .build()
                     );
         }
