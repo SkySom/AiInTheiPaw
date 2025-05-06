@@ -1,5 +1,7 @@
 package io.sommers.aiintheipaw.model.user;
 
+import io.sommers.aiintheipaw.entity.UserEntity;
+
 public record User(
         UserEntity userEntity
 ) implements IUser {

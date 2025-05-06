@@ -3,10 +3,12 @@ package io.sommers.aiintheipaw.logic;
 import io.quarkus.cache.CacheKey;
 import io.quarkus.cache.CacheResult;
 import io.smallrye.mutiny.Uni;
+import io.sommers.aiintheipaw.entity.ChannelEntity;
 import io.sommers.aiintheipaw.model.channel.Channel;
-import io.sommers.aiintheipaw.model.channel.ChannelEntity;
 import io.sommers.aiintheipaw.model.channel.IChannel;
 import io.sommers.aiintheipaw.model.service.IService;
+import io.sommers.aiintheipaw.repository.ChannelRepository;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -21,6 +23,9 @@ public class ChannelLogic {
 
     @Inject
     SessionFactory sessionFactory;
+
+    @Inject
+    ChannelRepository channelRepository;
 
     @CacheResult(cacheName = "channel")
     public Uni<IChannel> findByServiceGuildIdAndChannelId(@CacheKey IService service, @CacheKey String guildId, @CacheKey String channelId) {
@@ -51,22 +56,24 @@ public class ChannelLogic {
 
     @CacheResult(cacheName = "channel")
     public Uni<IChannel> getById(Long id) {
-        return sessionFactory.withSession(session -> session.find(ChannelEntity.class, id)
+        return this.channelRepository.getById(id)
                 .flatMap(channelEntity -> {
                     if (channelEntity != null) {
                         return Uni.createFrom()
-                                .item(new Channel(
-                                        channelEntity.getId(),
-                                        channelEntity.getService(),
-                                        channelEntity.getGuildId(),
-                                        channelEntity.getChannelId()
-                                ));
+                                .item(convertEntity(channelEntity));
                     } else {
                         return Uni.createFrom()
                                 .failure(new NotFoundException("No channel with id " + id + " found"));
                     }
+                });
+    }
 
-                })
+    private IChannel convertEntity(@Nullable ChannelEntity channelEntity) {
+        return new Channel(
+                channelEntity.getId(),
+                channelEntity.getService(),
+                channelEntity.getGuildId(),
+                channelEntity.getChannelId()
         );
     }
 

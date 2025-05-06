@@ -1,4 +1,4 @@
-package io.sommers.aiintheipaw.model.user;
+package io.sommers.aiintheipaw.entity;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;

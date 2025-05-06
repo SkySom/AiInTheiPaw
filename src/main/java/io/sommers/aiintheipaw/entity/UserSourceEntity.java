@@ -1,4 +1,4 @@
-package io.sommers.aiintheipaw.model.user;
+package io.sommers.aiintheipaw.entity;
 
 import io.sommers.aiintheipaw.converter.ServiceConverter;
 import io.sommers.aiintheipaw.model.service.IService;
