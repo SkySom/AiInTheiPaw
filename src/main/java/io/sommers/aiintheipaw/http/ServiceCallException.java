@@ -11,7 +11,8 @@ public class ServiceCallException extends HttpProblem {
         super(HttpProblem.builder()
                 .withStatus(Status.INTERNAL_SERVER_ERROR)
                 .withDetail("Failed to call service " + service.getName())
-                .with("Service Error", response)
+                .with("service", service.getName())
+                .with("error", response)
         );
     }
 }
