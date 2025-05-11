@@ -5,8 +5,14 @@ import logic.ServiceSpecific
 import model.channel.Channel
 import model.message.Message
 
+import zio.ZLayer
+
 import scala.util.Try
 
 trait MessageLogic extends ServiceSpecific {
   def sendMessage(channel: Channel, replyToId: Option[String], message: String): Try[Message]
+}
+
+object MessageLogic {
+  def layer: ZLayer[TwitchMessageLogic, Nothing, List[MessageLogic]] = ZLayer.fromFunction((twitch: TwitchMessageLogic) => List(twitch))
 }

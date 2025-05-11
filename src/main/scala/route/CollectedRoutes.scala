@@ -1,8 +1,8 @@
 package io.sommers.aiintheipaw
 package route
 
-import org.apache.pekko.http.scaladsl.server.Route
+import zio.http.{Response, Route, URL}
 
-trait CollectedRoutes {
-  def routes: Route
+trait CollectedRoutes[ENV] {
+  def routes: Seq[Route[ENV, Response]]
 }

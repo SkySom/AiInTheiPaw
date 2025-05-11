@@ -3,14 +3,15 @@ package logic.message
 
 import model.channel.Channel
 import model.message.Message
-import model.service.{Service, Twitch, TwitchService}
+import model.service.Service.Twitch
+import model.service.{Service, TwitchService}
 
-import com.softwaremill.tagging._
+import zio.ZLayer
 
 import scala.util.{Success, Try}
 
 class TwitchMessageLogic(
-  twitch: Service @@ Twitch
+  twitch: Twitch
 ) extends MessageLogic {
 
   override def sendMessage(channel: Channel, replyToId: Option[String], message: String): Try[Message] = {
@@ -20,4 +21,8 @@ class TwitchMessageLogic(
   }
 
   override val service: Service = twitch
+}
+
+object TwitchMessageLogic {
+  def layer: ZLayer[TwitchService, Nothing, TwitchMessageLogic] = ZLayer.fromFunction(new TwitchMessageLogic(_))
 }

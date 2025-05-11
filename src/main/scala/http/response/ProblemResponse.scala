@@ -1,21 +1,17 @@
 package io.sommers.aiintheipaw
 package http.response
 
-import util.Enrichments.EnrichedJsObject
+import zio.http.URL
+import zio.schema.{DeriveSchema, Schema}
 
-import org.apache.pekko.http.scaladsl.model.StatusCode
-import spray.json.{DeserializationException, JsNumber, JsObject, JsString, JsValue, RootJsonFormat, deserializationError}
-
-import java.net.URI
-import scala.collection.mutable
-
+//TODO This is gonna be all custom...
 case class ProblemResponse(
-  typeUri: Option[URI],
-  status: StatusCode,
+  typeUri: Option[String],
+  status: String,
   title: String,
   detail: Option[String],
-  instance: URI,
-  custom: Map[String, JsValue]
+  instance: String,
+  custom: Map[String, String]
 ) {
 
 }
@@ -23,37 +19,14 @@ case class ProblemResponse(
 object ProblemResponse {
   private val notCustom: List[String] = List("type", "status", "title", "detail", "instance")
 
-  implicit object ProblemResponseFormat extends RootJsonFormat[ProblemResponse] {
+  implicit val schema: Schema[ProblemResponse] = DeriveSchema.gen[ProblemResponse]
 
-    override def read(json: JsValue): ProblemResponse = {
-      val jsObject = json.asJsObject
-
-      val custom: Map[String, JsValue] = jsObject.fields.filterNot(notCustom.contains)
-
-      ProblemResponse(
-        jsObject.getString("type").map(URI.create),
-        200,
-        jsObject.getString("title").getOrElse(deserializationError("missing required field", fieldNames = List("title"))),
-        jsObject.getString("detail"),
-        jsObject.getString("instance").map(URI.create).getOrElse(deserializationError("missing required field", fieldNames = List("instance"))),
-        custom
-      )
-    }
-
-    override def write(obj: ProblemResponse): JsValue = {
-      val map: mutable.Map[String, JsValue] = mutable.Map(
-        "status" -> JsNumber(obj.status.intValue()),
-        "title" -> JsString(obj.title),
-        "instance" -> JsString(obj.instance.toString)
-      )
-
-      map += obj.custom
-
-      obj.typeUri.foreach(uri => map + ("type", JsString(uri.toString)))
-      obj.detail.foreach(detail => map + ("detail", JsString(detail)))
-
-
-      new JsObject(map.toMap)
-    }
-  }
+  def apply(throwable: Throwable, url: String): ProblemResponse = new ProblemResponse(
+    None,
+    "400",
+    s"Threw Exception ${throwable.getMessage}",
+    None,
+    url,
+    Map.empty
+  )
 }

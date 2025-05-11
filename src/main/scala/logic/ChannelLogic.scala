@@ -1,13 +1,13 @@
 package io.sommers.aiintheipaw
 package logic
 
-import model.channel.Channel
+import model.channel.{Channel, TwitchChannel}
+import model.service.TwitchService
 
-import scala.concurrent.Future
-import scala.util.{Failure, Try}
+import zio.{IO, ULayer, ZIO, ZLayer}
 
 class ChannelLogic {
-  def getChannel(id: Long): Future[Channel] = {
-    Future.failed(new IllegalArgumentException("No id"))
+  def getChannel(id: Long): IO[Throwable, Channel] = {
+    ZIO.succeed(TwitchChannel(id, TwitchService(), id.toString))
   }
 }
