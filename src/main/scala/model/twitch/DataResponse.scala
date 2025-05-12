@@ -4,3 +4,5 @@ package model.twitch
 case class DataResponse[D](
   data: List[D]
 )
+
+

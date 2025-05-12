@@ -1,8 +1,8 @@
 package io.sommers.aiintheipaw
 package model.service
 
-import distage.Id
 import zio.{ULayer, ZLayer}
+
 
 class Service(
   name: String
@@ -13,5 +13,5 @@ class Service(
 case class TwitchService() extends Service("Twitch")
 
 object Service {
-  type Twitch = Service @Id("Twitch")
+  val twitch: ULayer[TwitchService] = ZLayer.succeed(TwitchService())
 }

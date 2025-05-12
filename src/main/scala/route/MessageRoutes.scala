@@ -2,30 +2,42 @@ package io.sommers.aiintheipaw
 package route
 
 import http.request.{SendMessageRequest, SendMessageResponse}
-import http.response.ProblemResponse
-import logic.ChannelLogic
 import logic.message.MessageLogic
+import logic.{ChannelLogic, ServiceManager}
+import model.error.NotFoundError
+import model.service.{Service, TwitchService}
+import util.Enrichment.EnrichEndpoint
 
-import zio.{ZIO, ZNothing}
-import zio.http.endpoint.{AuthType, Endpoint}
-import zio.http.{Handler, Method, Request, Response, Route, RoutePattern, Status, URL, handler, withContext}
+import zio.http.Status.NotFound
+import zio.http.endpoint.Endpoint
+import zio.http.{Response, Route, RoutePattern, handler}
+import zio.{&, URLayer, ZLayer}
 
 case class MessageRoutes(
+  twitch: Service,
   channelLogic: ChannelLogic,
-  messageLogics: Set[MessageLogic]
-) extends CollectedRoutes[Any with URL] {
+  messageLogics: ServiceManager[MessageLogic]
+) extends CollectedRoutes[Any] {
 
-  override def routes: Seq[Route[Any with URL, Response]] = Seq(
+  override def routes: Seq[Route[Any, Response]] = Seq(
     botMessageRoute
   )
 
   private val botMessageEndpoint = Endpoint(RoutePattern.POST / "bot" / "message")
     .in[SendMessageRequest]
     .out[SendMessageResponse]
+    .outError[NotFoundError](NotFound)
 
-  private val botMessageRoute: Route[Any with URL, Response] = botMessageEndpoint.implement((request: SendMessageRequest) => {
-    withContext((url: URL) => ZIO.succeed(SendMessageResponse(url.toString)))
-  })
+  private val botMessageRoute: Route[Any, Response] = botMessageEndpoint.implementWithProblem(handler((request: SendMessageRequest) => {
+    for {
+      messageLogic <- messageLogics.get(twitch)
+      message <- messageLogic.sendMessage(null, None, request.message)
+    } yield new SendMessageResponse(message.getText)
+  }))
+}
+
+object MessageRoutes {
+  val live: URLayer[TwitchService & ChannelLogic & ServiceManager[MessageLogic], MessageRoutes] = ZLayer.fromFunction(MessageRoutes(_, _, _))
 }
 
 

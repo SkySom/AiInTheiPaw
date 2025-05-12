@@ -1,21 +1,17 @@
 package io.sommers.aiintheipaw
 package http
 
-import route.CollectedRoutes
+import route.RouteCollector
 
-import io.sommers.aiintheipaw.http.response.ProblemResponse
-import zio.ZIO
-import zio.http.{Response, Routes, Server, URL}
+import zio.http.Server
+import zio.{&, ULayer, ZIO, ZLayer}
 
-class WebServer(
-  routes: Set[CollectedRoutes[Any with URL]]
-) {
-  def serve(): ZIO[Any, Throwable, Any] = {
-    Server.serve(Routes.fromIterable[Any with URL, Response](routes.flatMap(_.routes)) @@ ProblemMiddleware.getFullUrl)
-      .provide(Server.default)
-  }
+case class WebServer() {
+  def serve(): ZIO[Server & RouteCollector, Throwable, Any] = ZIO.serviceWithZIO[RouteCollector]((routeCollector: RouteCollector) =>
+    Server.serve(routeCollector.allRoutes)
+  )
 }
 
 object WebServer {
-
+  val live: ULayer[WebServer] = ZLayer.succeed(WebServer())
 }

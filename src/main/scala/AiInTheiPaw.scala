@@ -1,35 +1,33 @@
 package io.sommers.aiintheipaw
 
 import http.WebServer
-import module.{LogicModule, MessagingModule, TwitchModule}
+import logic.ChannelLogic
+import logic.message.{MessageLogic, TwitchMessageLogic}
+import model.service.Service
+import route.{MessageRoutes, RouteCollector}
+import twitch.{TwitchRestClient, TwitchRestConfig}
 
-import distage.{Activation, Injector, Roots}
-import izumi.distage.model.definition.ModuleDef
-import zio.{Scope, Task, ZIO, ZIOAppArgs, ZIOAppDefault}
+import zio.http.{Client, Server}
+import zio.{Scope, ZIO, ZIOAppArgs, ZIOAppDefault}
 
 object AiInTheiPaw extends ZIOAppDefault {
 
-  private val moduleDef: ModuleDef = new ModuleDef {
-    include(TwitchModule)
-    include(MessagingModule)
-    include(LogicModule)
-
-    make[WebServer]
-  }
-  private val injector: Injector[Task] = Injector[Task]()
 
   override def run: ZIO[Any with ZIOAppArgs with Scope, Any, Any] = {
-    for {
-      plan <- ZIO.fromEither(injector.plan(
-        bindings = moduleDef,
-        activation = Activation.empty,
-        roots = Roots.target[WebServer]
-      )
-      )
-      produce <- injector.produce(plan)
-        .toZIO
-      _ <- produce.get[WebServer]
-        .serve()
-    } yield ()
+    (for {
+      _ <- ZIO.serviceWithZIO[WebServer](_.serve())
+    } yield ()).provide(
+      WebServer.live,
+      Server.default,
+      RouteCollector.live,
+      MessageRoutes.live,
+      ChannelLogic.live,
+      MessageLogic.live,
+      TwitchMessageLogic.live,
+      TwitchRestClient.live,
+      Service.twitch,
+      TwitchRestConfig.live,
+      Client.default
+    )
   }
 }

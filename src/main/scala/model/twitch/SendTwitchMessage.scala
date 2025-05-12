@@ -26,6 +26,7 @@ case class SendTwitchMessageResponse(
 
 object SendTwitchMessageResponse {
   implicit val schema: Schema[SendTwitchMessageResponse] = DeriveSchema.gen[SendTwitchMessageResponse]
+  implicit val dataSchema: Schema[DataResponse[SendTwitchMessageResponse]] = DeriveSchema.gen[DataResponse[SendTwitchMessageResponse]]
 }
 
 case class DropReason(

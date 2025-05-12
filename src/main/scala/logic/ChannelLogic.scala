@@ -11,3 +11,7 @@ class ChannelLogic {
     ZIO.succeed(TwitchChannel(id, TwitchService(), id.toString))
   }
 }
+
+object ChannelLogic {
+  val live: ULayer[ChannelLogic] = ZLayer.succeed(new ChannelLogic)
+}
