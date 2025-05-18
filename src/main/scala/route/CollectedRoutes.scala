@@ -1,8 +1,9 @@
 package io.sommers.aiintheipaw
 package route
 
-import zio.ZLayer
-import zio.http.{Response, Route, Routes, URL}
+import io.sommers.zio.twitch.server.TwitchWebHook
+import zio.{&, ZLayer}
+import zio.http.{Response, Route, Routes}
 
 trait CollectedRoutes[ENV] {
   def routes: Seq[Route[ENV, Response]]
@@ -13,9 +14,9 @@ trait RouteCollector {
 }
 
 object RouteCollector {
-  val live: ZLayer[MessageRoutes, Nothing, RouteCollector] = ZLayer.fromFunction((routes: MessageRoutes) => {
+  val live: ZLayer[MessageRoutes & TestRoutes, Nothing, RouteCollector] = ZLayer.fromFunction((routes: MessageRoutes, testRoutes: TestRoutes) => {
     new RouteCollector {
-      override val allRoutes: Routes[Any, Response] = Routes.fromIterable(routes.routes)
+      override val allRoutes: Routes[Any, Response] = Routes.fromIterable(routes.routes ++ testRoutes.routes ++ Seq(TwitchWebHook.route("twitch/callback")))
     }
   })
 }

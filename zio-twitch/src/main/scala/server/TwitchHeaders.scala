@@ -1,0 +1,85 @@
+package io.sommers.zio.twitch
+package server
+
+import util.TwitchSignatureVerifier
+
+import zio.http.codec.HeaderCodec
+import zio.schema.Schema
+import zio.schema.validation.Validation
+import zio.{UIO, ZIO}
+
+import java.nio.charset.StandardCharsets
+import java.time.{Duration, Instant}
+
+
+case class TwitchMessageId(value: String) {
+
+}
+
+object TwitchMessageId {
+  implicit val schema: Schema[TwitchMessageId] = Schema.primitive[String]
+    .validation(Validation.minLength(1))
+    .transform(TwitchMessageId(_), _.value)
+
+  val codec: HeaderCodec[TwitchMessageId] = HeaderCodec.headerAs("Twitch-Eventsub-Message-Id")
+}
+
+object TwitchMessageType extends Enumeration {
+  type TwitchMessageType = TwitchMessageTypeVal
+  protected case class TwitchMessageTypeVal(name: String) extends super.Val
+
+  val VERIFICATION: TwitchMessageTypeVal = TwitchMessageTypeVal("webhook_callback_verification")
+  val NOTIFICATION: TwitchMessageTypeVal = TwitchMessageTypeVal("notification")
+  val REVOCATION: TwitchMessageTypeVal = TwitchMessageTypeVal("revocation")
+
+  implicit val schema: Schema[TwitchMessageType] = Schema.primitive[String]
+    .transformOrFail(
+      {
+        case VERIFICATION.name => Right(VERIFICATION)
+        case NOTIFICATION.name => Right(NOTIFICATION)
+        case REVOCATION.name => Right(REVOCATION)
+        case other => Left(s"$other is not a valid message type")
+      },
+      value => Right(value.name)
+    )
+
+  val codec: HeaderCodec[TwitchMessageType] = HeaderCodec.headerAs("Twitch-Eventsub-Message-Type")
+}
+
+case class TwitchMessageTimestamp(timestamp: Instant) {
+  def isValid(maxDuration: Duration): UIO[Boolean] = {
+    for {
+      clock <- ZIO.clock
+      current <- clock.instant
+      duration <- ZIO.succeed(Duration.between(timestamp, current))
+    } yield duration.isPositive && maxDuration.compareTo(duration) < 0
+  }
+}
+
+object TwitchMessageTimestamp {
+  implicit val schema: Schema[TwitchMessageTimestamp] = Schema.primitive[Instant].transform(TwitchMessageTimestamp(_), _.timestamp)
+
+  val codec: HeaderCodec[TwitchMessageTimestamp] = HeaderCodec.headerAs("Twitch-Eventsub-Message-Timestamp")
+}
+
+case class TwitchMessageSignature(signature: String) {
+  def isValid(
+    secret: String,
+    messageId: TwitchMessageId,
+    messageTimestamp: TwitchMessageTimestamp,
+    body: String
+  ): Boolean = TwitchSignatureVerifier.verifySignature(
+    secret,
+    messageId.value,
+    messageTimestamp.timestamp,
+    body.getBytes(StandardCharsets.UTF_8),
+    signature
+  )
+}
+
+object TwitchMessageSignature {
+  implicit val schema: Schema[TwitchMessageSignature] = Schema.primitive[String].validation(Validation.minLength(1))
+    .transform(TwitchMessageSignature(_), _.signature)
+
+  val codec: HeaderCodec[TwitchMessageSignature] = HeaderCodec.headerAs("Twitch-Eventsub-Message-Signature")
+}

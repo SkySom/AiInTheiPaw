@@ -2,6 +2,6 @@
 <project version="4">
   <component name="ScalaCompilerConfiguration">
     <option name="separateProdTestSources" value="true" />
-    <profile name="sbt 1" modules="AiInTheiPaw,AiInTheiPaw.main,AiInTheiPaw.test" />
+    <profile name="sbt 1" modules="AiInTheiPaw,AiInTheiPaw.main,AiInTheiPaw.test,AiInTheiPaw.zio-twitch,AiInTheiPaw.zio-twitch.main,AiInTheiPaw.zio-twitch.test" />
   </component>
 </project>

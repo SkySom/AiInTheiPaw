@@ -1,11 +1,12 @@
 package io.sommers.aiintheipaw
 package logic.message
 
+import http.exception.ServiceCallException
 import model.channel.Channel
 import model.message.Message
 import model.service.{Service, TwitchService}
-import twitch.TwitchRestClient
 
+import io.sommers.zio.twitch.client.TwitchRestClient
 import zio.{&, IO, ZLayer}
 
 class TwitchMessageLogic(
@@ -19,7 +20,7 @@ class TwitchMessageLogic(
     } yield new Message {
       override def getText: String = send.messageId
     }
-  }
+  }.mapError(twitchClientError => new ServiceCallException(twitchClientError.message, twitch, twitchClientError.exception))
 
   override val service: Service = twitch
 }

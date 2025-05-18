@@ -1,5 +1,5 @@
-package io.sommers.aiintheipaw
-package model.twitch
+package io.sommers.zio.twitch
+package model.client
 
 import zio.json.jsonMemberNames
 import zio.json.ziojson_03.SnakeCase
