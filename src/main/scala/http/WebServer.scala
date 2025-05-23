@@ -3,8 +3,7 @@ package http
 
 import route.RouteCollector
 
-import io.sommers.zio.twitch.server.TwitchWebHook
-import zio.http.Server
+import zio.http.{HandlerAspect, Server}
 import zio.{&, ULayer, ZIO, ZLayer}
 
 case class WebServer() {

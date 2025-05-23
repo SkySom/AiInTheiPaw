@@ -1,27 +1,18 @@
 package io.sommers.aiintheipaw
 package route
 
-import model.error.NotFoundError
-
-import zio.http.Status.NotFound
-import zio.http.endpoint.Endpoint
-import zio.http.{Response, Route, RoutePattern}
+import zio.http.{Handler, Method, Request, Response, Route, handler}
 import zio.{ULayer, ZIO, ZLayer}
 
 case class TestRoutes() extends CollectedRoutes[Any] {
 
-  override def routes: Seq[Route[Any, Response]] = {
-    Seq(botMessageRoute)
-  }
-
-  private val botMessageEndpoint = Endpoint(RoutePattern.POST / "test" / "echo")
-    .in[Map[String, String]]
-    .out[Map[String, String]]
-    .outError[NotFoundError](NotFound)
-
-  private val botMessageRoute: Route[Any, Response] = botMessageEndpoint.implement(string => {
-    ZIO.succeed(string)
-  })
+  override def routes: Seq[Route[Any, Response]] = Seq(
+    Method.POST / "bot" / "echo" -> Handler.fromFunctionZIO { (request: Request) =>
+      for {
+        _ <- ZIO.log(request.headers.map(_.headerName).mkString(","))
+      } yield Response.text("Hi")
+    }
+  )
 }
 
 object TestRoutes {

@@ -39,7 +39,7 @@ class TwitchRestClientImpl(twitchConfig: TwitchRestClientConfig, client: Client)
         .flatMap(response => {
           response.status match {
             case _: Status.Success => response.bodyAs[DataResponse[SendTwitchMessageResponse]]
-            case error: Status.Error => ZIO.fail(new IllegalStateException(s"Found status ${error.code}"))
+            case error => ZIO.fail(new IllegalStateException(s"Found status ${error.code}"))
           }
         })
       ).mapError(error => TwitchClientError(error.getMessage, error))
