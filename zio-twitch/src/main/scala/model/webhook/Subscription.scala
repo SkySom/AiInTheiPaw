@@ -1,6 +1,7 @@
 package io.sommers.zio.twitch
 package model.webhook
 
+import zio.json.{DeriveJsonDecoder, JsonDecoder}
 import zio.schema.{DeriveSchema, Schema}
 import zio.schema.annotation.fieldName
 
@@ -11,7 +12,7 @@ import java.time.Instant
 case class Subscription(
   id: String,
   status: String,
-  @fieldName("type") subType: String,
+  @fieldName("type") eventType: String,
   version: String,
   cost: Int,
   condition: Map[String, String],
@@ -21,6 +22,7 @@ case class Subscription(
 
 object Subscription {
   implicit val schema: Schema[Subscription] = DeriveSchema.gen[Subscription]
+  implicit val jsonDecoder: JsonDecoder[Subscription] = DeriveJsonDecoder.gen[Subscription]
 }
 
 case class Transport(
@@ -30,4 +32,5 @@ case class Transport(
 
 object Transport {
   implicit val schema: Schema[Transport] = DeriveSchema.gen[Transport]
+  implicit val jsonDecoder: JsonDecoder[Subscription] = DeriveJsonDecoder.gen[Subscription]
 }

@@ -3,10 +3,12 @@ package server
 
 import util.TwitchSignatureVerifier
 
-import zio.http.codec.HeaderCodec
+import io.sommers.zio.twitch.server.TwitchMessageType.TwitchMessageType
+import zio.http.Request
+import zio.http.codec.{HeaderCodec, HttpCodecError}
 import zio.schema.Schema
 import zio.schema.validation.Validation
-import zio.{UIO, ZIO}
+import zio.{IO, UIO, ZIO}
 
 import java.nio.charset.StandardCharsets
 import java.time.{Duration, Instant}
@@ -22,6 +24,9 @@ object TwitchMessageId {
     .transform(TwitchMessageId(_), _.value)
 
   val codec: HeaderCodec[TwitchMessageId] = HeaderCodec.headerAs("twitch-eventsub-message-id")
+
+  def fromRequest(request: Request): IO[HttpCodecError.HeaderError, TwitchMessageId] = request.headerZIO("twitch-eventsub-message-id")
+
 }
 
 object TwitchMessageType extends Enumeration {
@@ -44,6 +49,8 @@ object TwitchMessageType extends Enumeration {
     )
 
   val codec: HeaderCodec[TwitchMessageType] = HeaderCodec.headerAs("twitch-eventsub-message-type")
+
+  def fromRequest(request: Request): IO[HttpCodecError.HeaderError, TwitchMessageType] = request.headerZIO("twitch-eventsub-message-type")
 }
 
 case class TwitchMessageTimestamp(timestamp: Instant) {
@@ -60,21 +67,19 @@ object TwitchMessageTimestamp {
   implicit val schema: Schema[TwitchMessageTimestamp] = Schema.primitive[Instant].transform(TwitchMessageTimestamp(_), _.timestamp)
 
   val codec: HeaderCodec[TwitchMessageTimestamp] = HeaderCodec.headerAs("twitch-eventsub-message-timestamp")
+
+  def fromRequest(request: Request): IO[HttpCodecError.HeaderError, TwitchMessageTimestamp] = request.headerZIO("twitch-eventsub-message-timestamp")
 }
 
 case class TwitchMessageSignature(signature: String) {
-  def isValid(
-    secret: String,
-    messageId: TwitchMessageId,
-    messageTimestamp: TwitchMessageTimestamp,
-    body: String
-  ): Boolean = TwitchSignatureVerifier.verifySignature(
-    secret,
-    messageId.value,
-    messageTimestamp.timestamp,
-    body.getBytes(StandardCharsets.UTF_8),
-    signature
-  )
+  def validate(secret: String, messageId: TwitchMessageId, messageTimestamp: TwitchMessageTimestamp, bodyString: String): IO[Throwable, Boolean] =
+    TwitchSignatureVerifier.verifySignature(
+      secret,
+      messageId.value,
+      messageTimestamp.timestamp,
+      bodyString.getBytes(StandardCharsets.UTF_8),
+      signature
+    )
 }
 
 object TwitchMessageSignature {
@@ -82,4 +87,7 @@ object TwitchMessageSignature {
     .transform(TwitchMessageSignature(_), _.signature)
 
   val codec: HeaderCodec[TwitchMessageSignature] = HeaderCodec.headerAs("twitch-eventsub-message-signature")
+
+  def fromRequest(request: Request): IO[HttpCodecError.HeaderError, TwitchMessageSignature] = request.headerZIO("twitch-eventsub-message-signature")
+
 }

@@ -60,7 +60,7 @@ case class TwitchRestClientConfig(
 object TwitchRestClientConfig {
   implicit val config: Config[TwitchRestClientConfig] = deriveConfig[TwitchRestClientConfig]
 
-  val live: Layer[Config.Error, TwitchRestClientConfig] = ZLayer.fromZIO(ZIO.configProviderWith(_.nested("twitch")
+  val live: Layer[Config.Error, TwitchRestClientConfig] = ZLayer.fromZIO(ZIO.configProviderWith(_.nested("twitch.client")
     .load[TwitchRestClientConfig]
   ))
 }

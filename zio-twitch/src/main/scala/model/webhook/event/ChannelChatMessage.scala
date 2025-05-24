@@ -3,6 +3,8 @@ package model.webhook.event
 
 import model.webhook.{Badge, Cheer, Message, Reply}
 
+import zio.json.{DeriveJsonCodec, DeriveJsonDecoder, JsonCodec, JsonDecoder}
+
 case class ChannelChatMessage(
   broadcasterUserId: String,
   broadcasterUserName: String,
@@ -16,4 +18,10 @@ case class ChannelChatMessage(
   badges: List[Badge],
   cheer: Option[Cheer],
   reply: Option[Reply]
-) extends WebhookEvent
+) extends TwitchEvent[ChannelChatMessage] {
+  override val twitchEventType: ChannelChatMessageEventType.type = ChannelChatMessageEventType
+}
+
+object ChannelChatMessage {
+  implicit val jsonDecoder: JsonDecoder[ChannelChatMessage] = DeriveJsonDecoder.gen[ChannelChatMessage]
+}
