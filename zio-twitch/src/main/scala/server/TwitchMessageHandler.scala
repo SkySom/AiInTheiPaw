@@ -2,10 +2,9 @@ package io.sommers.zio.twitch
 package server
 
 import model.webhook.Subscription
-import model.webhook.event.{TwitchEvent, TwitchEventType}
+import model.webhook.event.TwitchEventType
 import server.TwitchMessageType.TwitchMessageType
 
-import zio.json.JsonDecoder
 import zio.json.ast.Json
 import zio.{IO, URLayer, ZIO, ZLayer}
 
@@ -39,14 +38,20 @@ case class TwitchMessageHandlerImpl(notificationHandler: TwitchNotificationHandl
   private def handleNotification(obj: Json.Obj): IO[Throwable, Unit] = {
     for {
       subscriptionJson <- ZIO.fromOption(obj.get("subscription"))
-        .mapError(_ => new IllegalArgumentException("subscription is missing from notification"))
-      subscription <- ZIO.fromEither(subscriptionJson.as[Subscription])
-        .mapError(jsonError => new IllegalArgumentException(jsonError))
-      eventJson <- ZIO.fromOption(obj.get("event"))
-        .mapError(_ => new IllegalArgumentException("event is missing from notification"))
-      eventType <- TwitchEventType.get(subscription.eventType)
-      event <- ZIO.fromEither(eventJson.as[TwitchEvent[_]](eventType.jsonDecoder.asInstanceOf[JsonDecoder[TwitchEvent[_]]]))
-        .mapError(jsonError => new IllegalArgumentException(jsonError))
+        .mapError(_ => new IllegalArgumentException(".subscription(missing)"))
+      subscription <- subscriptionJson.as[Subscription]
+        .fold(
+          jsonError => ZIO.fail(new IllegalArgumentException(jsonError)),
+          {
+            subscription: Subscription => ZIO.succeed(subscription)
+          }
+        )
+      eventJson <- obj.get("event")
+        .fold[ZIO[Any, Throwable, Json]](ZIO.fail(new IllegalArgumentException(".event(missing)"))) {
+          json: Json => ZIO.succeed(json)
+        }
+      event <- TwitchEventType.parse(subscription.eventType, eventJson)
+        .mapError(string => new IllegalArgumentException(s".event(Parse fail $string)"))
       _ <- notificationHandler.handleNotification(subscription, event)
     } yield ()
   }

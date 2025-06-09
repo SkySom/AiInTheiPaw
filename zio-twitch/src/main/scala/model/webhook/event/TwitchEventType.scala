@@ -3,6 +3,7 @@ package model.webhook.event
 
 import zio.{IO, ZIO}
 import zio.json.JsonDecoder
+import zio.json.ast.Json
 
 sealed trait TwitchEventType[ET <: TwitchEvent[ET]] {
   val name: String
@@ -10,14 +11,13 @@ sealed trait TwitchEventType[ET <: TwitchEvent[ET]] {
 }
 
 object TwitchEventType {
-  def get[ET <: TwitchEvent[ET]](typeName: String): IO[Throwable, TwitchEventType[ET]] = for {
-    eventTypeOpt <- ZIO.whenCase[Any, Throwable, String, TwitchEventType[_]](typeName) {
-      case ChannelChatMessageEventType.name => ZIO.succeed(ChannelChatMessageEventType)
-      case _ => ZIO.fail(new IllegalArgumentException("Invalid Type"))
-    }
-    eventType <- ZIO.fromOption(eventTypeOpt)
-      .mapError(_ => new IllegalArgumentException("Invalid Type"))
-  } yield eventType.asInstanceOf
+  def parse(typeName: String, json: Json): IO[String, TwitchEvent[_]] = for {
+    eventTypeOpt <- ZIO.succeed(typeName match {
+      case ChannelChatMessageEventType.name => json.as[ChannelChatMessage]
+      case _ => Left(s"No JsonDecoder for $typeName")
+    })
+    event <- ZIO.fromEither(eventTypeOpt)
+  } yield event
 }
 
 object ChannelChatMessageEventType extends TwitchEventType[ChannelChatMessage] {

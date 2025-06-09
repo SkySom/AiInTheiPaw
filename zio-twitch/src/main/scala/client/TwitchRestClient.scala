@@ -1,6 +1,8 @@
-package io.sommers.zio.twitch.client
+package io.sommers.zio.twitch
+package client
 
-import io.sommers.zio.twitch.model.client.{DataResponse, SendTwitchMessageRequest, SendTwitchMessageResponse, TwitchClientError}
+import model.client.{DataResponse, SendTwitchMessageRequest, SendTwitchMessageResponse, TwitchClientError}
+
 import zio.config.magnolia.deriveConfig
 import zio.http.Header.Authorization
 import zio.http.{Body, Client, MediaType, Status, URL}
@@ -31,18 +33,20 @@ class TwitchRestClientImpl(twitchConfig: TwitchRestClientConfig, client: Client)
       twitchUrl <- ZIO.fromEither(URL.decode("https://api.twitch.tv"))
         .mapError(TwitchClientError(_))
       response <- ZIO.scoped(client.url(twitchUrl)
-        .addHeader("Client-Id", twitchConfig.clientId)
-        .addHeader(Authorization.Bearer(twitchConfig.clientSecret))
+        .addHeader("Client-Id", twitchConfig.id)
+        .addHeader(Authorization.Bearer(twitchConfig.secret))
         .post("/helix/chat/messages")(Body.from(request)
           .contentType(Body.ContentType(MediaType.application.`json`))
         )
-        .flatMap(response => {
-          response.status match {
-            case _: Status.Success => response.bodyAs[DataResponse[SendTwitchMessageResponse]]
-            case error => ZIO.fail(new IllegalStateException(s"Found status ${error.code}"))
+        .flatMap(
+          response => {
+            response.status match {
+              case _: Status.Success => response.bodyAs[DataResponse[SendTwitchMessageResponse]]
+              case error => ZIO.fail(new TwitchClientError(s"Found status ${error.code}"))
+            }
           }
-        })
-      ).mapError(error => TwitchClientError(error.getMessage, error))
+        )
+      ).mapError(TwitchClientError(_))
       messageResponse <- ZIO.fromOption(response.data.headOption)
         .mapError(_ => TwitchClientError("No data found on response"))
     } yield new SendTwitchMessageResponse(messageResponse.messageId, true, None)
@@ -51,8 +55,8 @@ class TwitchRestClientImpl(twitchConfig: TwitchRestClientConfig, client: Client)
 
 case class TwitchRestClientConfig(
   botId: String,
-  clientId: String,
-  clientSecret: String
+  id: String,
+  secret: String
 ) {
 
 }
@@ -60,9 +64,11 @@ case class TwitchRestClientConfig(
 object TwitchRestClientConfig {
   implicit val config: Config[TwitchRestClientConfig] = deriveConfig[TwitchRestClientConfig]
 
-  val live: Layer[Config.Error, TwitchRestClientConfig] = ZLayer.fromZIO(ZIO.configProviderWith(_.nested("twitch.client")
+  val live: Layer[Config.Error, TwitchRestClientConfig] = ZLayer.fromZIO(ZIO.configProviderWith(_.nested("client")
+    .nested("twitch")
     .load[TwitchRestClientConfig]
-  ))
+  )
+  )
 }
 
 object TwitchRestClient {

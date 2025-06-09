@@ -3,8 +3,9 @@ package model.webhook.event
 
 import model.webhook.{Badge, Cheer, Message, Reply}
 
-import zio.json.{DeriveJsonCodec, DeriveJsonDecoder, JsonCodec, JsonDecoder}
+import zio.json.{DeriveJsonCodec, DeriveJsonDecoder, JsonCodec, JsonDecoder, SnakeCase, jsonMemberNames}
 
+@jsonMemberNames(SnakeCase)
 case class ChannelChatMessage(
   broadcasterUserId: String,
   broadcasterUserName: String,
