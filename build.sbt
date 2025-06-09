@@ -2,11 +2,11 @@ ThisBuild / organization := "io.sommers"
 ThisBuild / version := "0.1.0-SNAPSHOT"
 ThisBuild / scalaVersion := "2.13.16"
 
-lazy val zioVersion = "2.1.18"
+lazy val zioVersion = "2.1.19"
 
 lazy val zioConfigVersion = "4.0.4"
-lazy val zioHttpVersion = "3.2.0"
-lazy val zioSchemaVersion = "1.7.1"
+lazy val zioHttpVersion = "3.3.3"
+lazy val zioSchemaVersion = "1.7.2"
 
 lazy val zioDependencies = Seq(
   "dev.zio" %% "zio" % zioVersion,
@@ -26,15 +26,22 @@ lazy val zioConfigDependencies = Seq(
   "dev.zio" %% "zio-config-magnolia" % zioConfigVersion,
 )
 
+lazy val zioQuillDependencies = Seq(
+  "io.getquill" %% "quill-jdbc-zio" % "4.8.5",
+  "org.postgresql" % "postgresql" % "42.7.6"
+)
+
 lazy val root = (project in file("."))
   .aggregate(zioTwitch)
   .dependsOn(zioTwitch)
   .settings(
     name := "AiInTheiPaw",
     idePackagePrefix := Some("io.sommers.aiintheipaw"),
-    libraryDependencies ++= zioDependencies ++ zioHttpDependencies ++ zioConfigDependencies ++ Seq(
-      "dev.zio" %% "zio-config-typesafe" % zioConfigVersion,
-    )
+    libraryDependencies ++= zioDependencies ++ zioHttpDependencies ++ zioConfigDependencies ++ zioQuillDependencies ++
+      Seq(
+        "dev.zio" %% "zio-cache" % "0.2.4",
+        "dev.zio" %% "zio-config-typesafe" % zioConfigVersion
+      )
   )
 
 lazy val zioTwitch = (project in file("zio-twitch"))

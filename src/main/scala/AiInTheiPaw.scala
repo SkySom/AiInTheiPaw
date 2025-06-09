@@ -1,12 +1,15 @@
 package io.sommers.aiintheipaw
 
 import http.WebServer
-import logic.{ChannelLogic, ConfigLogic}
+import logic.ChannelLogic
 import logic.message.{MessageLogic, TwitchMessageLogic}
-import model.service.Service
-import route.{MessageRoutes, RouteCollector, TestRoutes}
+import route.MessageRoutes
+import service.ChannelServiceLive
+import twitch.TwitchNotificationHandlerImpl
 
+import io.getquill.jdbczio.Quill
 import io.sommers.zio.twitch.ZIOTwitchLayers
+import io.sommers.zio.twitch.server.{TwitchMessageHandler, TwitchWebHookConfig}
 import zio.config.typesafe.TypesafeConfigProvider
 import zio.http.{Client, Server}
 import zio.{Runtime, Scope, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
@@ -21,14 +24,17 @@ object AiInTheiPaw extends ZIOAppDefault {
       WebServer.live,
       Server.default,
       ZIOTwitchLayers.clientLive,
-      RouteCollector.live,
       MessageRoutes.live,
-      ChannelLogic.live,
+      ChannelLogic.cachedLive,
       MessageLogic.live,
       TwitchMessageLogic.live,
-      Service.twitch,
       Client.default,
-      TestRoutes.live
+      TwitchNotificationHandlerImpl.layer,
+      TwitchWebHookConfig.live,
+      TwitchMessageHandler.live,
+      ZIOTwitchLayers.webhookLive,
+      ChannelServiceLive.live,
+      Quill.DataSource.fromPrefix("database")
     )
   }
 }

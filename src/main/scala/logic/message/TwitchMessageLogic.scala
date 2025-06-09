@@ -7,10 +7,9 @@ import model.message.Message
 import model.service.{Service, TwitchService}
 
 import io.sommers.zio.twitch.client.TwitchRestClient
-import zio.{&, IO, ZLayer}
+import zio.{IO, ZLayer}
 
-class TwitchMessageLogic(
-  twitch: Service,
+case class TwitchMessageLogic(
   twitchRestClient: TwitchRestClient
 ) extends MessageLogic {
 
@@ -20,11 +19,11 @@ class TwitchMessageLogic(
     } yield new Message {
       override def getText: String = send.messageId
     }
-  }.mapError(twitchClientError => new ServiceCallException(twitchClientError.message, twitch, twitchClientError.exception))
+  }.mapError(twitchClientError => new ServiceCallException(twitchClientError.message, TwitchService, twitchClientError.exception))
 
-  override val service: Service = twitch
+  override val service: Service = TwitchService
 }
 
 object TwitchMessageLogic {
-  val live: ZLayer[TwitchService & TwitchRestClient, Nothing, TwitchMessageLogic] = ZLayer.fromFunction(new TwitchMessageLogic(_, _))
+  val live: ZLayer[TwitchRestClient, Nothing, TwitchMessageLogic] = ZLayer.fromFunction(TwitchMessageLogic(_))
 }

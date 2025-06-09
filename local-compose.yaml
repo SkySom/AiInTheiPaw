@@ -1,0 +1,12 @@
+version: '3.1'
+
+services:
+  db:
+    container_name: aiintheipaw_postgres
+    image: postgres:9.6
+    environment:
+      POSTGRES_PASSWORD: aiintheipaw
+    ports:
+      - "25432:5432"
+    volumes:
+      - ./docker/postgres/data:/var/lib/postgresql/data

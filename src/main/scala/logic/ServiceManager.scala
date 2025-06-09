@@ -1,13 +1,13 @@
 package io.sommers.aiintheipaw
 package logic
 
-import model.error.NotFoundError
+import model.problem.NotFoundProblem
 import model.service.Service
 
 import zio.{IO, ZIO}
 
 trait ServiceManager[T <: ServiceSpecific] {
-  def get(service: Service): IO[NotFoundError, T]
+  def get(service: Service): IO[NotFoundProblem, T]
 }
 
 case class ServiceManagerImpl[T <: ServiceSpecific](
@@ -15,6 +15,8 @@ case class ServiceManagerImpl[T <: ServiceSpecific](
   managed: Iterable[T]
 ) extends ServiceManager[T] {
 
-  override def get(service: Service): IO[NotFoundError, T] = ZIO.fromOption(managed.find(_.service == service))
-    .mapError(_ => NotFoundError(name, s"Failed to find $name for $service"))
+  override def get(service: Service): IO[NotFoundProblem, T] = managed.find(_.service == service)
+    .fold[IO[NotFoundProblem, T]](ZIO.fail(NotFoundProblem(name, s"Failed to find $name for $service"))) {
+      (value: T) => ZIO.succeed(value)
+    }
 }
