@@ -1,10 +1,10 @@
 package io.sommers.aiintheipaw
-package model.error
+package model.problem
 
 import zio.http.URL
 import zio.schema.{DeriveSchema, Schema}
 
-case class Problem(
+case class ProblemResponse(
   typeUri: Option[String],
   status: Int,
   title: String,
@@ -13,20 +13,20 @@ case class Problem(
   custom: Map[String, String]
 ) extends ProblemProvider {
 
-  override def toProblem(instance: String): Problem = this
+  override def toProblem(instance: String): ProblemResponse = this
 }
 
 trait ProblemProvider {
-  def toProblem(instance: String): Problem
+  def toProblem(instance: String): ProblemResponse
 }
 
-object Problem {
-  implicit val schema: Schema[Problem] = DeriveSchema.gen[Problem]
+object ProblemResponse {
+  implicit val schema: Schema[ProblemResponse] = DeriveSchema.gen[ProblemResponse]
 
-  def apply(value: Any, url: URL): Problem = {
+  def apply(value: Any, url: URL): ProblemResponse = {
     value match {
       case problemProvider: ProblemProvider => problemProvider.toProblem(url.toString)
-      case throwable: Throwable => new Problem(
+      case throwable: Throwable => new ProblemResponse(
         None,
         400,
         s"Threw Exception ${throwable.getMessage}",
@@ -34,7 +34,7 @@ object Problem {
         url.toString,
         Map.empty
       )
-      case other: Any => Problem(
+      case other: Any => ProblemResponse(
         typeUri = None,
         500,
         s"Found Error, but could not translate to problem",
