@@ -1,16 +1,19 @@
 package io.sommers.zio.twitch
 package server
 
+import util.TwitchSignatureVerifier
+
 import zio.config.magnolia.DeriveConfig
 import zio.http.{Body, Handler, Headers, Method, Request, Response, Route, Status}
 import zio.json.ast.Json
 import zio.schema.codec.JsonCodec.schemaBasedBinaryCodec
 import zio.schema.codec.json._
-import zio.{&, Config, Layer, ZIO, ZLayer}
+import zio.{&, Config, Layer, URLayer, ZEnvironment, ZIO, ZLayer}
 
 case class TwitchWebHookRoutes(
   twitchWebHookConfig: TwitchWebHookConfig,
-  twitchMessageHandler: TwitchMessageHandler
+  twitchMessageHandler: TwitchMessageHandler,
+  twitchSignatureVerifier: TwitchSignatureVerifier
 ) {
   def routes: Seq[Route[Any, Response]] = Seq(webhookRoute)
 
@@ -26,6 +29,7 @@ case class TwitchWebHookRoutes(
           signature <- TwitchMessageSignature.fromRequest(request)
           bodyString <- request.body.asString
           _ <- signature.validate(twitchWebHookConfig.secret, messageId, timestamp, bodyString)
+            .provideEnvironment(ZEnvironment(twitchSignatureVerifier))
             .flatMap(valid => if (valid) ZIO.succeed(()) else ZIO.fail(new IllegalStateException("Signatures did not match")))
           json <- request.body.to[Json]
           handleMessage <- twitchMessageHandler.handleMessage(messageType, json)
@@ -38,12 +42,14 @@ case class TwitchWebHookRoutes(
 }
 
 object TwitchWebHookRoutes {
-  val live: ZLayer[TwitchWebHookConfig & TwitchMessageHandler, Nothing, TwitchWebHookRoutes] = ZLayer.fromFunction(TwitchWebHookRoutes(_, _))
+  val live: URLayer[TwitchWebHookConfig & TwitchMessageHandler & TwitchSignatureVerifier, TwitchWebHookRoutes] =
+    ZLayer.fromFunction(TwitchWebHookRoutes(_, _, _))
 }
 
 case class TwitchWebHookConfig(
   secret: String,
-  route: String = "twitch/callback"
+  route: String = "twitch/callback",
+  verify: Boolean = true
 )
 
 object TwitchWebHookConfig {

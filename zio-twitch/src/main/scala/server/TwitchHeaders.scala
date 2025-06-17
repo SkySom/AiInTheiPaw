@@ -3,7 +3,6 @@ package server
 
 import util.TwitchSignatureVerifier
 
-import io.sommers.zio.twitch.server.TwitchMessageType.TwitchMessageType
 import zio.http.Request
 import zio.http.codec.{HeaderCodec, HttpCodecError}
 import zio.schema.Schema
@@ -31,7 +30,8 @@ object TwitchMessageId {
 
 object TwitchMessageType extends Enumeration {
   type TwitchMessageType = TwitchMessageTypeVal
-  protected case class TwitchMessageTypeVal(name: String) extends super.Val
+
+  sealed case class TwitchMessageTypeVal(name: String) extends super.Val
 
   val VERIFICATION: TwitchMessageTypeVal = TwitchMessageTypeVal("webhook_callback_verification")
   val NOTIFICATION: TwitchMessageTypeVal = TwitchMessageTypeVal("notification")
@@ -72,13 +72,15 @@ object TwitchMessageTimestamp {
 }
 
 case class TwitchMessageSignature(signature: String) {
-  def validate(secret: String, messageId: TwitchMessageId, messageTimestamp: TwitchMessageTimestamp, bodyString: String): IO[Throwable, Boolean] =
-    TwitchSignatureVerifier.verifySignature(
-      secret,
-      messageId.value,
-      messageTimestamp.timestamp,
-      bodyString.getBytes(StandardCharsets.UTF_8),
-      signature
+  def validate(secret: String, messageId: TwitchMessageId, messageTimestamp: TwitchMessageTimestamp, bodyString: String): ZIO[TwitchSignatureVerifier, Throwable, Boolean] =
+    ZIO.serviceWithZIO[TwitchSignatureVerifier](
+      _.verifySignature(
+        secret,
+        messageId.value,
+        messageTimestamp.timestamp,
+        bodyString.getBytes(StandardCharsets.UTF_8),
+        signature
+      )
     )
 }
 

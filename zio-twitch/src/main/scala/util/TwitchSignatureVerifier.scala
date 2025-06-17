@@ -1,8 +1,10 @@
 package io.sommers.zio.twitch
 package util
 
-import com.sun.org.slf4j.internal.LoggerFactory
-import zio.{IO, ZIO}
+import server.TwitchWebHookConfig
+import util.TwitchSignatureVerifierImpl._
+
+import zio.{IO, URLayer, ZIO, ZLayer}
 
 import java.nio.charset.StandardCharsets
 import java.security.{InvalidKeyException, MessageDigest, NoSuchAlgorithmException}
@@ -14,23 +16,14 @@ import javax.crypto.spec.SecretKeySpec
  * Based off of https://github.com/twitch4j/twitch4j/blob/master/eventsub-common/src/main/java/com/github/twitch4j/eventsub/util/EventSubVerifier.java
  * License: https://github.com/twitch4j/twitch4j/blob/master/LICENSE
  */
-private class TwitchSignatureVerifier {
-
+trait TwitchSignatureVerifier {
+  def verifySignature(secret: String, messageId: String, messageTimestamp: Instant, requestBody: Array[Byte], expectedSignature: String): IO[Throwable, Boolean]
 }
 
-object TwitchSignatureVerifier {
-  private val JAVA_HMAC_ALGORITHM = "HmacSHA256"
-  private val SIGNATURE_HASH_PREFIX = "sha256="
-  private val HASH_LENGTH = 256 / 4
-  private val HMAC_FUNCTION = ThreadLocal.withInitial(() => {
-    try Mac.getInstance(JAVA_HMAC_ALGORITHM)
-    catch {
-      case _: NoSuchAlgorithmException =>
-        null
-    }
-  })
-
-  def verifySignature(secret: SecretKeySpec, messageId: String, messageTimestamp: Instant, requestBody: Array[Byte], expectedSignature: String): IO[Throwable, Boolean] = {
+case class TwitchSignatureVerifierImpl(
+  twitchWebHookConfig: TwitchWebHookConfig
+) extends TwitchSignatureVerifier {
+  private def verifySignature(secret: SecretKeySpec, messageId: String, messageTimestamp: Instant, requestBody: Array[Byte], expectedSignature: String): IO[Throwable, Boolean] = {
     if (secret == null || expectedSignature == null || messageId == null || messageTimestamp == null || requestBody == null) {
       return ZIO.fail(new IllegalArgumentException("Found Null arguments"))
     }
@@ -61,14 +54,35 @@ object TwitchSignatureVerifier {
   /**
    * @see #verifySignature(SecretKeySpec, String, String, byte[], String)
    */
-  def verifySignature(secret: Array[Byte], messageId: String, messageTimestamp: Instant, requestBody: Array[Byte], expectedSignature: String): IO[Throwable, Boolean] =
+  private def verifySignature(secret: Array[Byte], messageId: String, messageTimestamp: Instant, requestBody: Array[Byte], expectedSignature: String): IO[Throwable, Boolean] =
     verifySignature(new SecretKeySpec(secret, JAVA_HMAC_ALGORITHM), messageId, messageTimestamp, requestBody, expectedSignature)
 
   /**
    * @see #verifySignature(SecretKeySpec, String, String, byte[], String)
    */
-  def verifySignature(secret: String, messageId: String, messageTimestamp: Instant, requestBody: Array[Byte], expectedSignature: String): IO[Throwable, Boolean] =
-    verifySignature(secret.getBytes(StandardCharsets.UTF_8), messageId, messageTimestamp, requestBody, expectedSignature)
+  override def verifySignature(secret: String, messageId: String, messageTimestamp: Instant, requestBody: Array[Byte], expectedSignature: String): IO[Throwable, Boolean] =
+    if (twitchWebHookConfig.verify) {
+      verifySignature(secret.getBytes(StandardCharsets.UTF_8), messageId, messageTimestamp, requestBody, expectedSignature)
+    } else {
+      ZIO.succeed(true)
+    }
+}
+
+object TwitchSignatureVerifierImpl {
+  val live: URLayer[TwitchWebHookConfig, TwitchSignatureVerifierImpl] = ZLayer.fromFunction(TwitchSignatureVerifierImpl(_))
+
+  private val JAVA_HMAC_ALGORITHM = "HmacSHA256"
+  private val SIGNATURE_HASH_PREFIX = "sha256="
+  private val HASH_LENGTH = 256 / 4
+  private val HMAC_FUNCTION = ThreadLocal.withInitial(
+    () => {
+      try Mac.getInstance(JAVA_HMAC_ALGORITHM)
+      catch {
+        case _: NoSuchAlgorithmException =>
+          null
+      }
+    }
+  )
 
   private def hexStringToByteArray(s: String): Array[Byte] = {
     val len = s.length
