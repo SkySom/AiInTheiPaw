@@ -5,11 +5,11 @@ import model.client.{DataResponse, SendTwitchMessageRequest, SendTwitchMessageRe
 
 import zio.config.magnolia.deriveConfig
 import zio.http.Header.Authorization
-import zio.http.{Body, Client, MediaType, Status, URL}
+import zio.http.*
 import zio.schema.NameFormat.SnakeCase
 import zio.schema.codec.BinaryCodec
 import zio.schema.codec.JsonCodec.{Configuration, schemaBasedBinaryCodec}
-import zio.{&, Config, IO, Layer, URLayer, ZIO, ZLayer}
+import zio.{Config, IO, Layer, URLayer, ZIO, ZLayer}
 
 trait TwitchRestClient {
   def sendMessage(
@@ -64,10 +64,11 @@ case class TwitchRestClientConfig(
 object TwitchRestClientConfig {
   implicit val config: Config[TwitchRestClientConfig] = deriveConfig[TwitchRestClientConfig]
 
-  val live: Layer[Config.Error, TwitchRestClientConfig] = ZLayer.fromZIO(ZIO.configProviderWith(_.nested("client")
-    .nested("twitch")
-    .load[TwitchRestClientConfig]
-  )
+  val live: Layer[Config.Error, TwitchRestClientConfig] = ZLayer.fromZIO(
+    ZIO.configProviderWith(_.nested("client")
+      .nested("twitch")
+      .load[TwitchRestClientConfig]
+    )
   )
 }
 

@@ -5,7 +5,7 @@ import route.MessageRoutes
 
 import io.sommers.zio.twitch.server.{TwitchMessageHandler, TwitchWebHookConfig, TwitchWebHookRoutes}
 import zio.http.{Middleware, Routes, Server}
-import zio.{&, URLayer, ZIO, ZLayer}
+import zio.{URLayer, ZIO, ZLayer}
 
 case class WebServer(
   messageRoutes: MessageRoutes,

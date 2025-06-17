@@ -3,12 +3,13 @@ package server
 
 import util.TwitchSignatureVerifier
 
-import zio.config.magnolia.DeriveConfig
+import zio.config.magnolia
+import zio.config.magnolia.{DeriveConfig, deriveConfig}
 import zio.http.{Body, Handler, Headers, Method, Request, Response, Route, Status}
 import zio.json.ast.Json
 import zio.schema.codec.JsonCodec.schemaBasedBinaryCodec
-import zio.schema.codec.json._
-import zio.{&, Config, Layer, URLayer, ZEnvironment, ZIO, ZLayer}
+import zio.schema.codec.json.*
+import zio.{Config, Layer, URLayer, ZEnvironment, ZIO, ZLayer}
 
 case class TwitchWebHookRoutes(
   twitchWebHookConfig: TwitchWebHookConfig,
@@ -53,7 +54,7 @@ case class TwitchWebHookConfig(
 )
 
 object TwitchWebHookConfig {
-  implicit val config: Config[TwitchWebHookConfig] = DeriveConfig.deriveConfig[TwitchWebHookConfig]
+  implicit val config: Config[TwitchWebHookConfig] = deriveConfig[TwitchWebHookConfig]
 
   val live: Layer[Config.Error, TwitchWebHookConfig] = ZLayer.fromZIO(
     ZIO.configProviderWith(_.nested("webhook").nested("twitch")

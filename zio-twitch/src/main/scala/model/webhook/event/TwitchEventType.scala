@@ -11,7 +11,7 @@ sealed trait TwitchEventType[ET <: TwitchEvent[ET]] {
 }
 
 object TwitchEventType {
-  def parse(typeName: String, json: Json): IO[String, TwitchEvent[_]] = for {
+  def parse(typeName: String, json: Json): IO[String, TwitchEvent[?]] = for {
     eventTypeOpt <- ZIO.succeed(typeName match {
       case ChannelChatMessageEventType.name => json.as[ChannelChatMessage]
       case _ => Left(s"No JsonDecoder for $typeName")

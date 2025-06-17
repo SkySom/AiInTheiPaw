@@ -11,7 +11,7 @@ import util.Enrichment.EnrichEndpoint
 import zio.http.Status.NotFound
 import zio.http.endpoint.Endpoint
 import zio.http.{Response, Route, RoutePattern, handler}
-import zio.{&, URLayer, ZLayer}
+import zio.{URLayer, ZLayer}
 
 case class MessageRoutes(
   channelLogic: ChannelLogic,

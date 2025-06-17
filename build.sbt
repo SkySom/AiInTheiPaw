@@ -1,6 +1,6 @@
 ThisBuild / organization := "io.sommers"
 ThisBuild / version := "0.1.0-SNAPSHOT"
-ThisBuild / scalaVersion := "2.13.16"
+ThisBuild / scalaVersion := "3.7.1"
 
 lazy val zioVersion = "2.1.19"
 
@@ -26,9 +26,10 @@ lazy val zioConfigDependencies = Seq(
   "dev.zio" %% "zio-config-magnolia" % zioConfigVersion,
 )
 
-lazy val zioQuillDependencies = Seq(
-  "io.getquill" %% "quill-jdbc-zio" % "4.8.5",
-  "org.postgresql" % "postgresql" % "42.7.6"
+lazy val zioDBDependencies = Seq(
+  "com.augustnagro" %% "magnumzio" % "2.0.0-M2",
+  "org.postgresql" % "postgresql" % "42.7.7",
+  "com.zaxxer" % "HikariCP" % "6.3.0"
 )
 
 lazy val root = (project in file("."))
@@ -37,7 +38,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "AiInTheiPaw",
     idePackagePrefix := Some("io.sommers.aiintheipaw"),
-    libraryDependencies ++= zioDependencies ++ zioHttpDependencies ++ zioConfigDependencies ++ zioQuillDependencies ++
+    libraryDependencies ++= zioDependencies ++ zioHttpDependencies ++ zioConfigDependencies ++ zioDBDependencies ++
       Seq(
         "dev.zio" %% "zio-cache" % "0.2.4",
         "dev.zio" %% "zio-config-typesafe" % zioConfigVersion
