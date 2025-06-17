@@ -4,7 +4,8 @@ package logic.message
 import http.exception.ServiceCallException
 import model.channel.Channel
 import model.message.Message
-import model.service.{Service, TwitchService}
+import model.service.Service
+import model.service.Service.Twitch
 
 import io.sommers.zio.twitch.client.TwitchRestClient
 import zio.{IO, ZLayer}
@@ -15,13 +16,13 @@ case class TwitchMessageLogic(
 
   override def sendMessage(channel: Channel, replyToId: Option[String], message: String): IO[Throwable, Message] = {
     for {
-      send <- twitchRestClient.sendMessage("1200371172", replyToId, message)
+      send <- twitchRestClient.sendMessage(channel.channelId, replyToId, message)
     } yield new Message {
       override def getText: String = send.messageId
     }
-  }.mapError(twitchClientError => new ServiceCallException(twitchClientError.message, TwitchService, twitchClientError.exception))
+  }.mapError(twitchClientError => new ServiceCallException(twitchClientError.message, Twitch, twitchClientError.exception))
 
-  override val service: Service = TwitchService
+  override val service: Service = Twitch
 }
 
 object TwitchMessageLogic {

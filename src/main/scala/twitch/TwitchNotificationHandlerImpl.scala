@@ -1,24 +1,26 @@
 package io.sommers.aiintheipaw
 package twitch
 
-import logic.ChannelLogic
+import logic.{ChannelLogic, UserLogic}
 import model.problem.Problem
-import model.service.TwitchService
+import model.service.Service.Twitch
 
 import io.sommers.zio.twitch.model.webhook.Subscription
 import io.sommers.zio.twitch.model.webhook.event.ChannelChatMessage
 import io.sommers.zio.twitch.server.TwitchNotificationHandler
-import zio.{IO, ZIO, ZLayer}
+import zio.{IO, URLayer, ZIO, ZLayer}
 
 case class TwitchNotificationHandlerImpl(
-  channelLogic: ChannelLogic
+  channelLogic: ChannelLogic,
+  userLogic: UserLogic
 ) extends TwitchNotificationHandler {
 
   override def handleNotification[TE](subscription: Subscription, event: TE): IO[Throwable, Unit] = (for {
     _ <- ZIO.whenCase(event) {
       case channelChatMessage: ChannelChatMessage => for {
-        channel <- channelLogic.findChannelForService(TwitchService, channelChatMessage.broadcasterUserId)
-        _ <- ZIO.log(s"Channel: $channel")
+        channel <- channelLogic.findChannelForService(Twitch, channelChatMessage.broadcasterUserId)
+        user <- userLogic.findUserForService(Twitch, channelChatMessage.chatterUserId, channelChatMessage.broadcasterUserName)
+        _ <- ZIO.log(s"Channel: $channel, User: $user")
         _ <- handleChatMessage(channelChatMessage)
       } yield ()
     }
@@ -30,5 +32,5 @@ case class TwitchNotificationHandlerImpl(
 }
 
 object TwitchNotificationHandlerImpl {
-  val layer: ZLayer[ChannelLogic, Nothing, TwitchNotificationHandler] = ZLayer.fromFunction(TwitchNotificationHandlerImpl(_))
+  val layer: URLayer[ChannelLogic & UserLogic, TwitchNotificationHandler] = ZLayer.fromFunction(TwitchNotificationHandlerImpl(_, _))
 }

@@ -2,10 +2,10 @@ package io.sommers.aiintheipaw
 
 import database.DataSourceProvider
 import http.WebServer
-import logic.ChannelLogic
+import logic.{ChannelLogic, UserLogic}
 import logic.message.{MessageLogic, TwitchMessageLogic}
 import route.MessageRoutes
-import service.ChannelServiceLive
+import service.{ChannelServiceLive, UserServiceLive}
 import twitch.TwitchNotificationHandlerImpl
 
 import io.sommers.zio.twitch.ZIOTwitchLayers
@@ -34,7 +34,9 @@ object AiInTheiPaw extends ZIOAppDefault {
       TwitchMessageHandler.live,
       ZIOTwitchLayers.webhookLive,
       ChannelServiceLive.live,
-      DataSourceProvider.transactorLive
+      DataSourceProvider.transactorLive,
+      UserServiceLive.live,
+      UserLogic.cachedLive
     )
   }
 }

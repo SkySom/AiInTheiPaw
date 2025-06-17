@@ -5,7 +5,7 @@ import http.request.{SendMessageRequest, SendMessageResponse}
 import logic.message.MessageLogic
 import logic.{ChannelLogic, ServiceManager}
 import model.problem.NotFoundProblem
-import model.service.TwitchService
+import model.service.Service.Twitch
 import util.Enrichment.EnrichEndpoint
 
 import zio.http.Status.NotFound
@@ -31,8 +31,9 @@ case class MessageRoutes(
     handler(
       (request: SendMessageRequest) => {
         for {
-          messageLogic <- messageLogics.get(TwitchService)
-          message <- messageLogic.sendMessage(null, None, request.message)
+          messageLogic <- messageLogics.get(Twitch)
+          channel <- channelLogic.getChannel(request.channelId)
+          message <- messageLogic.sendMessage(channel, None, request.message)
         } yield new SendMessageResponse(message.getText)
       }
     )

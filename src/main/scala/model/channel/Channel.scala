@@ -2,7 +2,8 @@ package io.sommers.aiintheipaw
 package model.channel
 
 import model.problem.NotFoundProblem
-import model.service.{Service, TwitchService}
+import model.service.Service.Twitch
+import model.service.Service
 
 import zio.{IO, ZIO}
 
@@ -21,12 +22,12 @@ case class TwitchChannel(
   channelId: String
 ) extends Channel {
   override val guildId: Option[String] = None
-  override val service: Service = TwitchService
+  override val service: Service = Service.Twitch
 }
 
 object Channel {
-  def apply(id: Long, channelId: String, service: String, guildId: Option[String]): IO[NotFoundProblem, Channel] = service match {
-    case TwitchService.name => ZIO.succeed(TwitchChannel(id, channelId))
+  def apply(id: Long, channelId: String, service: String, guildId: Option[String]): IO[NotFoundProblem, Channel] = Service.valueOf(service) match {
+    case Service.Twitch => ZIO.succeed(TwitchChannel(id, channelId))
     case _ => ZIO.fail(NotFoundProblem("Channel", s"No Channel type for $service"))
   }
 }

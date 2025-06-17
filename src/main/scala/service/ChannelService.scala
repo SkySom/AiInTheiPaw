@@ -10,8 +10,6 @@ import com.augustnagro.magnum.*
 import com.augustnagro.magnum.magzio.TransactorZIO
 import zio.{IO, Task, URLayer, ZLayer}
 
-import java.sql.SQLException
-import javax.sql.DataSource
 import scala.language.implicitConversions
 
 @Table(PostgresDbType, CamelCaseNoEntitySqlNameMapper)
@@ -44,12 +42,12 @@ case class ChannelServiceLive(
   private val channelRepo = Repo[ChannelEntity, ChannelEntity, Long]
 
   override def getChannel(id: Long): Task[Option[ChannelEntity]] = {
-    transactorZIO.transact:
+    transactorZIO.connect:
       channelRepo.findById(id)
   }
 
   override def createChannel(channelEntity: ChannelEntity): Task[ChannelEntity] = {
-    transactorZIO.transact:
+    transactorZIO.connect:
       channelRepo.insertReturning(channelEntity)
   }
 
@@ -59,7 +57,7 @@ case class ChannelServiceLive(
       .where(sql"channel_id = $channelId")
       .where(sql"guild_id = $guildId")
 
-    transactorZIO.transact:
+    transactorZIO.connect:
       channelRepo.findAll(spec)
         .headOption
   }

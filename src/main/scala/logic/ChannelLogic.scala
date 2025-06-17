@@ -5,12 +5,10 @@ import model.channel.Channel
 import model.problem.{NotFoundProblem, Problem, ThrowableProblem}
 import model.service.Service
 import service.{ChannelEntity, ChannelService}
+import util.CacheHelper
 
 import zio.cache.{Cache, Lookup}
-import zio.{Duration, IO, URLayer, ZIO, ZLayer}
-
-import java.sql.SQLException
-import java.time.temporal.ChronoUnit
+import zio.{IO, URLayer, ZIO, ZLayer}
 
 trait ChannelLogic {
   def getChannel(id: Long): IO[Problem, Channel]
@@ -25,7 +23,7 @@ case class ChannelLogicLive(
   override def findChannelForService(service: Service, channelId: String, guildId: Option[String]): IO[Problem, Channel] = {
     channelService.getChannel(service, channelId, guildId)
       .foldZIO(
-        ThrowableProblem.applyZIO(_),
+        ThrowableProblem.applyZIO,
         _.fold(createChannel(service, channelId, guildId)) {
           _.toChannel
         }
@@ -35,7 +33,7 @@ case class ChannelLogicLive(
   private def createChannel(service: Service, channelId: String, guildId: Option[String]): IO[Problem, Channel] = {
     channelService.createChannel(ChannelEntity(0, channelId, service.name, guildId))
       .foldZIO(
-        ThrowableProblem.applyZIO(_),
+        ThrowableProblem.applyZIO,
         _.toChannel
       )
   }
@@ -73,25 +71,13 @@ object ChannelLogic {
           capacity = Int.MaxValue,
           lookup = Lookup(channelLogic.getChannel)
         ) {
-          result => result.foldExit(
-            failed = cause => cause.failureOption match {
-              case Some(ThrowableProblem(_: SQLException)) => Duration.Zero
-              case _ => Duration(1, ChronoUnit.MINUTES)
-            },
-            completed = _ => Duration(10, ChronoUnit.MINUTES)
-          )
+          CacheHelper.handleTTL(_)
         }
         cacheByChannelInfo <- Cache.makeWith[(Service, String, Option[String]), Any, Problem, Channel](
           capacity = Int.MaxValue,
           lookup = Lookup(key => channelLogic.findChannelForService(key._1, key._2, key._3))
         ) {
-          result => result.foldExit(
-            failed = cause => cause.failureOption match {
-              case Some(ThrowableProblem(_: SQLException)) => Duration.Zero
-              case _ => Duration(1, ChronoUnit.MINUTES)
-            },
-            completed = _ => Duration(10, ChronoUnit.MINUTES)
-          )
+          CacheHelper.handleTTL(_)
         }
       } yield ChannelLogicCachedLive(cacheById, cacheByChannelInfo)
     }

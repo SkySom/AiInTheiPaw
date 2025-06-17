@@ -1,10 +1,5 @@
 package io.sommers.aiintheipaw
 package model.service
 
-sealed trait Service {
-  val name: String
-}
-
-object TwitchService extends Service {
-  override val name: String = "Twitch"
-}
+enum Service(val name: String):
+  case Twitch extends Service("Twitch")
