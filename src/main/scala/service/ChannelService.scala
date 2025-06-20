@@ -27,36 +27,46 @@ case class ChannelEntity(
   )
 }
 
+@Table(PostgresDbType, CamelCaseNoEntitySqlNameMapper)
+case class ChannelCreate(
+  channelId: String,
+  service: String,
+  guildId: Option[String]
+) derives DbCodec
+
 trait ChannelService {
   def getChannel(id: Long): Task[Option[ChannelEntity]]
 
   def getChannel(service: Service, channelId: String, guildId: Option[String]): Task[Option[ChannelEntity]]
 
-  def createChannel(channelEntity: ChannelEntity): Task[ChannelEntity]
+  def createChannel(channelCreate: ChannelCreate): Task[ChannelEntity]
 }
 
 case class ChannelServiceLive(
   transactorZIO: TransactorZIO
 ) extends ChannelService {
 
-  private val channelRepo = Repo[ChannelEntity, ChannelEntity, Long]
+  private val channelRepo = Repo[ChannelCreate, ChannelEntity, Long]
 
   override def getChannel(id: Long): Task[Option[ChannelEntity]] = {
     transactorZIO.connect:
       channelRepo.findById(id)
   }
 
-  override def createChannel(channelEntity: ChannelEntity): Task[ChannelEntity] = {
+  override def createChannel(channelCreate: ChannelCreate): Task[ChannelEntity] = {
     transactorZIO.connect:
-      channelRepo.insertReturning(channelEntity)
+      channelRepo.insertReturning(channelCreate)
   }
 
-  override def getChannel(service: Service, channelId: String, guildId: Option[String]): Task[Option[ChannelEntity]] = {
-    val spec = Spec[ChannelEntity]
+  override def getChannel(service: Service, channelId: String, guildIdOpt: Option[String]): Task[Option[ChannelEntity]] = {
+    var spec = Spec[ChannelEntity]
       .where(sql"service = ${service.toString}")
       .where(sql"channel_id = $channelId")
-      .where(sql"guild_id = $guildId")
 
+    spec = guildIdOpt.fold(spec.where(sql"guild_id is null")) { guildId =>
+      spec.where(sql"guild_id = $guildId")
+    }
+    
     transactorZIO.connect:
       channelRepo.findAll(spec)
         .headOption

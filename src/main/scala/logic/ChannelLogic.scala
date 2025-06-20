@@ -4,7 +4,7 @@ package logic
 import model.channel.Channel
 import model.problem.{NotFoundProblem, Problem, ThrowableProblem}
 import model.service.Service
-import service.{ChannelEntity, ChannelService}
+import service.{ChannelCreate, ChannelEntity, ChannelService}
 import util.CacheHelper
 
 import zio.cache.{Cache, Lookup}
@@ -31,7 +31,7 @@ case class ChannelLogicLive(
   }
 
   private def createChannel(service: Service, channelId: String, guildId: Option[String]): IO[Problem, Channel] = {
-    channelService.createChannel(ChannelEntity(0, channelId, service.name, guildId))
+    channelService.createChannel(ChannelCreate(channelId, service.name, guildId))
       .foldZIO(
         ThrowableProblem.applyZIO,
         _.toChannel

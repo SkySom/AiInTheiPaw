@@ -17,6 +17,11 @@ case class UserEntity(
 }
 
 @Table(PostgresDbType, CamelCaseNoEntitySqlNameMapper)
+case class UserEntityCreator(
+
+)derives DbCodec
+
+@Table(PostgresDbType, CamelCaseNoEntitySqlNameMapper)
 case class UserSourceEntity(
   @Id id: Long,
   userId: Long,
@@ -33,6 +38,14 @@ case class UserSourceEntity(
   )
 }
 
+@Table(PostgresDbType, CamelCaseNoEntitySqlNameMapper)
+case class UserSourceEntityCreator(
+  userId: Long,
+  service: String,
+  serviceUserId: String,
+  displayName: String
+)derives DbCodec
+
 trait UserService {
   def getUser(id: Long): Task[Option[(UserEntity, Seq[UserSourceEntity])]]
 
@@ -47,8 +60,11 @@ private case class UserServiceLive(
   transactorZIO: TransactorZIO
 ) extends UserService {
 
-  private val userRepo = Repo[UserEntity, UserEntity, Long]
-  private val userSourceRepo = Repo[UserSourceEntity, UserSourceEntity, Long]
+  private val userRepo = Repo[UserEntityCreator, UserEntity, Long]
+  private val userSourceRepo = Repo[UserSourceEntityCreator, UserSourceEntity, Long]
+
+
+  private val createUserFrag: Returning[Long] = sql"""insert into "user" DEFAULT VALUES RETURNING id;""".returning[Long]
 
   override def getUser(id: Long): Task[Option[(UserEntity, Seq[UserSourceEntity])]] = {
     transactorZIO.transact {
@@ -79,8 +95,8 @@ private case class UserServiceLive(
 
   override def createUser(service: Service, userId: String, displayName: String): Task[(UserEntity, UserSourceEntity)] = {
     transactorZIO.transact {
-      val userEntity = userRepo.insertReturning(UserEntity(0))
-      val userSourceEntity = userSourceRepo.insertReturning(UserSourceEntity(0, userEntity.id, service.name, userId, displayName))
+      val userEntity = UserEntity(id = createUserFrag.run().headOption.getOrElse(throw new IllegalStateException("No User Created")))
+      val userSourceEntity = userSourceRepo.insertReturning(UserSourceEntityCreator(userEntity.id, service.name, userId, displayName))
       (userEntity, userSourceEntity)
     }
   }

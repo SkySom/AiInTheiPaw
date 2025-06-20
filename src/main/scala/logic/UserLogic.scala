@@ -8,10 +8,7 @@ import service.{UserEntity, UserService, UserSourceEntity}
 import util.CacheHelper
 
 import zio.cache.{Cache, Lookup}
-import zio.{Duration, IO, URLayer, ZIO, ZLayer}
-
-import java.sql.SQLException
-import java.time.temporal.ChronoUnit
+import zio.{IO, URLayer, ZIO, ZLayer}
 
 trait UserLogic {
   def findUserForService(service: Service, userId: String, displayName: String): IO[Problem, User]
