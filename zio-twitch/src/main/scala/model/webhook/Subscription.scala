@@ -6,6 +6,7 @@ import zio.schema.annotation.fieldName
 import zio.schema.{DeriveSchema, Schema}
 
 import java.time.Instant
+import scala.annotation.unused
 
 
 case class Subscription(
@@ -29,6 +30,7 @@ case class Transport(
   callback: String
 )
 
+@unused
 object Transport {
   implicit val schema: Schema[Transport] = DeriveSchema.gen[Transport]
   implicit val jsonDecoder: JsonDecoder[Transport] = DeriveJsonDecoder.gen[Transport]

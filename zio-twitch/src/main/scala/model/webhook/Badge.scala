@@ -3,7 +3,6 @@ package model.webhook
 
 import zio.json.{DeriveJsonDecoder, JsonDecoder, SnakeCase, jsonMemberNames}
 
-
 @jsonMemberNames(SnakeCase)
 case class Badge(
   setId: String,
