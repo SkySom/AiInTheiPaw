@@ -1,6 +1,8 @@
 package io.sommers.aiintheipaw
 package model.problem
 
+import model.problem.ProblemType.ServerProblem
+
 import zio.ZIO
 
 case class ThrowableProblem(

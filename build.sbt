@@ -28,6 +28,7 @@ lazy val zioConfigDependencies = Seq(
 
 lazy val zioDBDependencies = Seq(
   "com.augustnagro" %% "magnumzio" % "2.0.0-M2",
+  "com.augustnagro" %% "magnumpg" % "2.0.0-M2",
   "org.postgresql" % "postgresql" % "42.7.7",
   "com.zaxxer" % "HikariCP" % "6.3.0"
 )
