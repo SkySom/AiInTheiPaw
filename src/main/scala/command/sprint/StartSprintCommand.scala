@@ -4,14 +4,12 @@ package command.sprint
 import command.{Command, CommandOption, DurationCommandOption}
 import logic.SprintLogic
 import logic.message.MessageLogic
-import model.message.{Message, ReceivedMessage}
+import model.message.ReceivedMessage
 import model.problem.Problem
 
-import zio.{IO, Task, URLayer, ZLayer}
+import zio.{Duration, IO, URLayer, ZLayer}
 
-import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.Duration
 
 case class StartSprintCommand(
   sprintLogic: SprintLogic,
@@ -19,7 +17,7 @@ case class StartSprintCommand(
 ) extends Command {
   private val durationCommandOption = DurationCommandOption(
     "sprintDuration",
-    "The amount of time for the Sprint to run in format: x minutes y seconds"
+    "The amount of time for the Sprint to run either as a number (of minutes) or in format: <x>m<y>s"
   )
 
   override val name: String = "startSprint"

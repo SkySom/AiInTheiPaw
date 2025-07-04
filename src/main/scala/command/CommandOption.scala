@@ -3,9 +3,9 @@ package command
 
 import model.problem.{InvalidValueProblem, Problem, ThrowableProblem}
 
-import zio.{IO, Task, Trace, ZIO}
+import zio.{Duration, IO, Task, Trace, ZIO}
 
-import scala.concurrent.duration.Duration
+import java.util.concurrent.TimeUnit
 import scala.util.Try
 
 
@@ -43,15 +43,21 @@ case class DurationCommandOption(
   description: String,
   required: Boolean = false
 ) extends CommandOption[Duration] {
+  val numberPattern = "^(-?\\d*.?\\d*)$".r
+
+
   override def parseOption(input: String)(implicit trace: Trace): IO[Problem, Duration] = {
-    ZIO.attempt(Duration(input))
-      .mapError {
-        case _: IllegalArgumentException => InvalidValueProblem(s"$input must be a valid duration (ie 10 minutes 30 seconds)")
-        case other => Problem(other)
-      }
+    input match {
+      case numberPattern(duration) => Try(duration.toDouble)
+        .fold(
+          _ => ZIO.fail(InvalidValueProblem("$input is not a valid decimal number")),
+          decimalMinutes => ZIO.succeed(Duration.fromSeconds(Math.ceil(decimalMinutes * 60).toLong))
+        )
+      case _ => ZIO.fail(InvalidValueProblem("$input is not a valid duration"))
+    }
   }
 
-  def find(args: Map[String, AnyVal]): IO[Problem, Option[Duration]] = {
+  def find(args: Map[String, Any]): IO[Problem, Option[Duration]] = {
     args.get(this.name)
       .fold(ZIO.succeed(None)) {
         case duration: Duration => ZIO.succeed(duration).asSome

@@ -1,16 +1,17 @@
 package io.sommers.aiintheipaw
 package command
 
-import model.message.Message
+import model.message.ReceivedMessage
+import model.problem.Problem
 
-import zio.Task
+import zio.IO
 
 trait Command {
   val name: String
-  
+
   val description: String
-  
+
   val options: Array[CommandOption[?]]
-  
-  def run(message: Message, args: Map[String, AnyVal]): Task[Unit]
+
+  def run(message: ReceivedMessage, args: Map[String, AnyVal]): IO[Problem, Unit]
 }
