@@ -11,7 +11,7 @@ trait Command {
 
   val description: String
 
-  val options: Array[CommandOption[?]]
+  val options: Array[CommandOption[?]] = Array()
 
   def run(message: ReceivedMessage, args: Map[String, AnyVal]): IO[Problem, Unit]
 }

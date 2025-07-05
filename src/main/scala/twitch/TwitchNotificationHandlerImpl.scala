@@ -5,6 +5,7 @@ import logic.{ChannelLogic, UserLogic}
 import model.problem.Problem
 import model.service.Service.Twitch
 
+import io.sommers.aiintheipaw.command.CommandManager
 import io.sommers.zio.twitch.model.webhook.Subscription
 import io.sommers.zio.twitch.model.webhook.event.ChannelChatMessage
 import io.sommers.zio.twitch.server.TwitchNotificationHandler
@@ -12,7 +13,8 @@ import zio.{IO, URLayer, ZIO, ZLayer}
 
 case class TwitchNotificationHandlerImpl(
   channelLogic: ChannelLogic,
-  userLogic: UserLogic
+  userLogic: UserLogic,
+  commandManager: CommandManager
 ) extends TwitchNotificationHandler {
 
   override def handleNotification[TE](subscription: Subscription, event: TE): IO[Throwable, Unit] = (for {
@@ -32,5 +34,6 @@ case class TwitchNotificationHandlerImpl(
 }
 
 object TwitchNotificationHandlerImpl {
-  val layer: URLayer[ChannelLogic & UserLogic, TwitchNotificationHandler] = ZLayer.fromFunction(TwitchNotificationHandlerImpl(_, _))
+  val layer: URLayer[ChannelLogic & UserLogic & CommandManager, TwitchNotificationHandler] =
+    ZLayer.fromFunction(TwitchNotificationHandlerImpl(_, _, _))
 }

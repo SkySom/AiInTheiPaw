@@ -6,7 +6,7 @@ lazy val zioVersion = "2.1.19"
 
 lazy val zioConfigVersion = "4.0.4"
 lazy val zioHttpVersion = "3.3.3"
-lazy val zioSchemaVersion = "1.7.2"
+lazy val zioSchemaVersion = "1.7.3"
 
 lazy val zioDependencies = Seq(
   "dev.zio" %% "zio" % zioVersion,
@@ -42,7 +42,8 @@ lazy val root = (project in file("."))
     libraryDependencies ++= zioDependencies ++ zioHttpDependencies ++ zioConfigDependencies ++ zioDBDependencies ++
       Seq(
         "dev.zio" %% "zio-cache" % "0.2.4",
-        "dev.zio" %% "zio-config-typesafe" % zioConfigVersion
+        "dev.zio" %% "zio-config-typesafe" % zioConfigVersion,
+        "org.scala-lang.modules" %% "scala-collection-contrib" % "0.4.0"
       )
   )
 

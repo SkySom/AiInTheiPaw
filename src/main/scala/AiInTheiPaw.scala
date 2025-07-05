@@ -2,17 +2,20 @@ package io.sommers.aiintheipaw
 
 import database.DataSourceProvider
 import http.WebServer
-import logic.{ChannelLogic, UserLogic}
-import logic.message.{MessageLogic, TwitchMessageLogic}
+import logic.{ChannelLogic, SprintLogic, UserLogic}
+import logic.message.{MessageLogic, TwitchServiceMessageLogic}
 import route.MessageRoutes
-import service.{ChannelServiceLive, UserServiceLive}
+import service.{ChannelServiceLive, SprintService, UserServiceLive}
 import twitch.TwitchNotificationHandlerImpl
 
+import io.sommers.aiintheipaw.command.CommandManager
+import io.sommers.aiintheipaw.command.sprint.SprintCommandGroup
+import io.sommers.aiintheipaw.command.util.UtilCommandGroup
 import io.sommers.zio.twitch.ZIOTwitchLayers
 import io.sommers.zio.twitch.server.{TwitchMessageHandler, TwitchWebHookConfig}
 import zio.config.typesafe.TypesafeConfigProvider
 import zio.http.{Client, Server}
-import zio.{Runtime, Scope, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
+import zio.{Clock, Runtime, Scope, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
 
 object AiInTheiPaw extends ZIOAppDefault {
   override val bootstrap: ZLayer[Any, Nothing, Unit] = Runtime.setConfigProvider(TypesafeConfigProvider.fromResourcePath(true))
@@ -36,7 +39,10 @@ object AiInTheiPaw extends ZIOAppDefault {
       ChannelServiceLive.live,
       DataSourceProvider.transactorLive,
       UserServiceLive.live,
-      UserLogic.cachedLive
+      UserLogic.cachedLive,
+      SprintLogic.live,
+      CommandManager.fullLive,
+      SprintService.live
     )
   }
 }
