@@ -3,7 +3,7 @@ package server
 
 import model.webhook.Subscription
 import model.webhook.event.TwitchEventType
-import server.TwitchMessageType.TwitchMessageType
+import server.TwitchMessageType
 
 import zio.json.ast.Json
 import zio.{IO, URLayer, ZIO, ZLayer}
@@ -19,10 +19,9 @@ case class TwitchMessageHandlerImpl(notificationHandler: TwitchNotificationHandl
       jsonObject <- ZIO.fromOption(json.asObject)
         .orElseFail(new IllegalArgumentException("json was not object"))
       result <- messageType match {
-        case TwitchMessageType.VERIFICATION => handleVerification(jsonObject).map(Left(_))
-        case TwitchMessageType.NOTIFICATION => handleNotification(jsonObject).map(Right(_))
-        case TwitchMessageType.REVOCATION => ZIO.succeed(Right(()))
-        case other => ZIO.fail(new IllegalArgumentException(s"Invalid messageType $other"))
+        case TwitchMessageType.Verification => handleVerification(jsonObject).map(Left(_))
+        case TwitchMessageType.Notification => handleNotification(jsonObject).map(Right(_))
+        case TwitchMessageType.Revocation => ZIO.succeed(Right(()))
       }
     } yield result
   }

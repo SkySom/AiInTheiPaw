@@ -28,26 +28,24 @@ object TwitchMessageId {
 
 }
 
-object TwitchMessageType extends Enumeration {
-  type TwitchMessageType = TwitchMessageTypeVal
+enum TwitchMessageType(val name: String) {
+  case Verification extends TwitchMessageType("webhook_callback_verification")
+  case Notification extends TwitchMessageType("notification")
+  case Revocation extends TwitchMessageType("revocation")
+}
 
-  sealed case class TwitchMessageTypeVal(name: String) extends super.Val
-
-  val VERIFICATION: TwitchMessageTypeVal = TwitchMessageTypeVal("webhook_callback_verification")
-  val NOTIFICATION: TwitchMessageTypeVal = TwitchMessageTypeVal("notification")
-  val REVOCATION: TwitchMessageTypeVal = TwitchMessageTypeVal("revocation")
-
+object TwitchMessageType {
   implicit val schema: Schema[TwitchMessageType] = Schema.primitive[String]
     .transformOrFail(
       {
-        case VERIFICATION.name => Right(VERIFICATION)
-        case NOTIFICATION.name => Right(NOTIFICATION)
-        case REVOCATION.name => Right(REVOCATION)
+        case Verification.name => Right(Verification)
+        case Notification.name => Right(Notification)
+        case Revocation.name => Right(Revocation)
         case other => Left(s"$other is not a valid message type")
       },
       value => Right(value.name)
     )
-
+    
   val codec: HeaderCodec[TwitchMessageType] = HeaderCodec.headerAs("twitch-eventsub-message-type")
 
   def fromRequest(request: Request): IO[HttpCodecError.HeaderError, TwitchMessageType] = request.headerZIO("twitch-eventsub-message-type")
