@@ -11,7 +11,7 @@ trait ReceivedMessage extends Message {
   lazy val userSource: UserSource = user.sources.find(_.service == service)
     .getOrElse(throw new IllegalArgumentException("Failed to find UserSource"))
 
-  val service: Service
+  lazy val service: Service = channel.service
 
   val channel: Channel
   

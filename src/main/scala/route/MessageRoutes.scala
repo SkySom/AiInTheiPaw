@@ -15,7 +15,7 @@ import zio.{URLayer, ZLayer}
 
 case class MessageRoutes(
   channelLogic: ChannelLogic,
-  messageLogics: ServiceManager[MessageLogic]
+  messageLogic: MessageLogic
 ) {
 
   def routes: Seq[Route[Any, Response]] = Seq(
@@ -31,17 +31,16 @@ case class MessageRoutes(
     handler(
       (request: SendMessageRequest) => {
         for {
-          messageLogic <- messageLogics.get(Twitch)
           channel <- channelLogic.getChannel(request.channelId)
           message <- messageLogic.sendMessage(channel, None, request.message)
-        } yield new SendMessageResponse(message.getText)
+        } yield new SendMessageResponse(message.text)
       }
     )
   )
 }
 
 object MessageRoutes {
-  val live: URLayer[ChannelLogic & ServiceManager[MessageLogic], MessageRoutes] = ZLayer.fromFunction(MessageRoutes(_, _))
+  val live: URLayer[ChannelLogic & MessageLogic, MessageRoutes] = ZLayer.fromFunction(MessageRoutes(_, _))
 }
 
 
