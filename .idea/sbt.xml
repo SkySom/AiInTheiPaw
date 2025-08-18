@@ -9,6 +9,8 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/project" />
+            <option value="$PROJECT_DIR$/zio-localize" />
+            <option value="$PROJECT_DIR$/zio-slick" />
             <option value="$PROJECT_DIR$/zio-twitch" />
           </set>
         </option>
