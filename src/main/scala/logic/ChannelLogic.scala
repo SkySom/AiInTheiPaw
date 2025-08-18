@@ -2,9 +2,9 @@ package io.sommers.aiintheipaw
 package logic
 
 import model.channel.Channel
-import model.problem.{NotFoundProblem, Problem, ThrowableProblem}
+import model.problem.{NotFoundProblem, Problem}
 import model.service.Service
-import service.{ChannelCreate, ChannelEntity, ChannelService}
+import service.{ChannelCreate, ChannelService}
 import util.CacheHelper
 
 import zio.cache.{Cache, Lookup}
@@ -23,28 +23,25 @@ case class ChannelLogicLive(
   override def findChannelForService(service: Service, channelId: String, guildId: Option[String]): IO[Problem, Channel] = {
     channelService.getChannel(service, channelId, guildId)
       .foldZIO(
-        ThrowableProblem.applyZIO,
+        Problem.applyZIO,
         _.fold(createChannel(service, channelId, guildId)) {
-          _.toChannel
+          channelEntity => ZIO.succeed(channelEntity.toChannel)
         }
       )
   }
 
   private def createChannel(service: Service, channelId: String, guildId: Option[String]): IO[Problem, Channel] = {
-    channelService.createChannel(ChannelCreate(channelId, service.name, guildId))
-      .foldZIO(
-        ThrowableProblem.applyZIO,
-        _.toChannel
-      )
+    channelService.createChannel(ChannelCreate(channelId, service, guildId))
+      .map(_.toChannel)
+      .mapError(Problem(_))
   }
 
   override def getChannel(id: Long): IO[Problem, Channel] = channelService.getChannel(id)
     .foldZIO(
-      sqlException => ZIO.fail(ThrowableProblem(sqlException)),
-      channelEntityOpt => channelEntityOpt.fold[IO[Problem, Channel]](
-        ZIO.fail(NotFoundProblem("Channel", s"No Channel with id $id"))
-      ) {
-        channelEntity => channelEntity.toChannel
+      Problem.applyZIO(_),
+      {
+        case Some(channelEntity) => ZIO.succeed(channelEntity.toChannel)
+        case _ => ZIO.fail(NotFoundProblem(s"Failed to find Channel for $id"))
       }
     )
 }

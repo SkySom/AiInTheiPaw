@@ -1,112 +1,125 @@
 package io.sommers.aiintheipaw
 package service
 
-import database.CamelCaseNoEntitySqlNameMapper
 import model.service.Service
 import model.user.{User, UserSource}
 
-import com.augustnagro.magnum.*
-import com.augustnagro.magnum.magzio.TransactorZIO
+import io.sommers.zio.slick.DatabaseZIO
+import database.AiPostgresProfile.api.*
+import slick.lifted.{ForeignKeyQuery, Tag}
 import zio.{Task, URLayer, ZLayer}
 
-@Table(PostgresDbType, CamelCaseNoEntitySqlNameMapper)
+import scala.annotation.unused
+
 case class UserEntity(
-  @Id id: Long
-)derives DbCodec {
+  id: Long
+) {
   def toUser(userSources: Seq[UserSourceEntity]): User = User(id, userSources.map(_.toUserSource).toList)
 }
 
-@Table(PostgresDbType, CamelCaseNoEntitySqlNameMapper)
-case class UserEntityCreator(
+class UserTable(tag: Tag) extends Table[UserEntity](tag, "\"user\"") {
+  def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
 
-)derives DbCodec
+  def * = id.mapTo[UserEntity]
+}
 
-@Table(PostgresDbType, CamelCaseNoEntitySqlNameMapper)
+val userQuery = TableQuery[UserTable]
+
 case class UserSourceEntity(
-  @Id id: Long,
+  id: Long,
   userId: Long,
-  service: String,
+  service: Service,
   serviceUserId: String,
   displayName: String
-)derives DbCodec {
+) {
   def toUserSource: UserSource = UserSource(
     id,
     userId,
-    Service.valueOf(service),
+    service,
     serviceUserId,
     displayName
   )
 }
 
-@Table(PostgresDbType, CamelCaseNoEntitySqlNameMapper)
-case class UserSourceEntityCreator(
-  userId: Long,
-  service: String,
-  serviceUserId: String,
-  displayName: String
-)derives DbCodec
+class UserSourceTable(tag: Tag) extends Table[UserSourceEntity](tag, "user_source") {
+  def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
+
+  def userId = column[Long]("user_id")
+
+  def service = column[Service]("service")
+
+  def serviceUserId = column[String]("service_user_id")
+
+  def displayName = column[String]("display_name")
+
+  @unused
+  def userIdForeignKey: ForeignKeyQuery[UserTable, UserEntity] = foreignKey("user_id_fk", userId, userQuery)(_.id)
+
+  def * = (id, userId, service, serviceUserId, displayName).mapTo[UserSourceEntity]
+}
+
+val userSourceQuery = TableQuery[UserSourceTable]
 
 trait UserService {
   def getUser(id: Long): Task[Option[(UserEntity, Seq[UserSourceEntity])]]
 
-  def getUserSource(service: Service, userId: String): Task[Option[UserSourceEntity]]
+  def getUser(service: Service, userId: String): Task[Option[(UserEntity, Seq[UserSourceEntity])]]
 
   def createUser(service: Service, userId: String, displayName: String): Task[(UserEntity, UserSourceEntity)]
 
-  def updateUserSource(userSourceEntity: UserSourceEntity): Task[Unit]
+  def updateUserSource(userSourceEntity: UserSourceEntity): Task[Int]
 }
 
 private case class UserServiceLive(
-  transactorZIO: TransactorZIO
+  databaseZIO: DatabaseZIO
 ) extends UserService {
 
-  private val userRepo = Repo[UserEntityCreator, UserEntity, Long]
-  private val userSourceRepo = Repo[UserSourceEntityCreator, UserSourceEntity, Long]
-
-
-  private val createUserFrag: Returning[Long] = sql"""insert into "user" DEFAULT VALUES RETURNING id;""".returning[Long]
-
   override def getUser(id: Long): Task[Option[(UserEntity, Seq[UserSourceEntity])]] = {
-    transactorZIO.transact {
-      for {
-        user <- userRepo.findById(id)
-        userSources <- getUserSources(user.id)
-      } yield (user, userSources)
+    databaseZIO.runStream {
+      val query = for {
+        (user, userSource) <- userQuery.filter(_.id === id) join userSourceQuery on (_.id === _.userId)
+      } yield (user, userSource)
+
+      query.result
+    }.map {
+      result =>
+        result.headOption.map(firstResult => (firstResult._1, result.map(_._2)))
     }
   }
 
-  override def getUserSource(service: Service, userId: String): Task[Option[UserSourceEntity]] = {
-    transactorZIO.connect {
-      userSourceRepo.findAll(Spec[UserSourceEntity]
-        .where(sql"service = ${service.name}")
-        .where(sql"service_user_id = $userId")
-      ).headOption
-    }
-  }
-
-  private def getUserSources(userId: Long)(using dbCon: DbCon): Option[Seq[UserSourceEntity]] = {
-    val sources = userSourceRepo.findAll(Spec[UserSourceEntity].where(sql"user_id = $userId"))
-    if (sources.isEmpty) {
-      None
-    } else {
-      Some(sources)
-    }
+  override def getUser(service: Service, userId: String): Task[Option[(UserEntity, Seq[UserSourceEntity])]] = {
+    databaseZIO.runStream {
+      {
+        for {
+          user <- userQuery.filter(_.id in userSourceQuery.filter(_.service === service)
+            .filter(_.serviceUserId === userId)
+            .map(_.userId)
+          )
+          userSources <- userSourceQuery if userSources.userId === user.id
+        } yield (user, userSources)
+      }.result
+    }.map(results => results.headOption.map(result => (result._1, results.map(_._2))))
   }
 
   override def createUser(service: Service, userId: String, displayName: String): Task[(UserEntity, UserSourceEntity)] = {
-    transactorZIO.transact {
-      val userEntity = UserEntity(id = createUserFrag.run().headOption.getOrElse(throw new IllegalStateException("No User Created")))
-      val userSourceEntity = userSourceRepo.insertReturning(UserSourceEntityCreator(userEntity.id, service.name, userId, displayName))
-      (userEntity, userSourceEntity)
+    databaseZIO.run {
+      implicit _ =>
+        for {
+          user <- (userQuery returning userQuery.map(_.id) into ((user, id) => user.copy(id = id))) += UserEntity(0L)
+          userSource <- (userSourceQuery returning userSourceQuery.map(_.id) into ((user, id) => user.copy(id = id))) +=
+            UserSourceEntity(0L, user.id, service, userId, displayName)
+        } yield (user, userSource)
     }
   }
 
-  override def updateUserSource(userSourceEntity: UserSourceEntity): Task[Unit] = {
-    transactorZIO.connect:
-      userSourceRepo.update(userSourceEntity)
+  override def updateUserSource(userSourceEntity: UserSourceEntity): Task[Int] = {
+    databaseZIO.run {
+      userSourceQuery.filter(_.id === userSourceEntity.id)
+        .update(userSourceEntity)
+    }
   }
 }
 
 object UserServiceLive {
-  val live: URLayer[TransactorZIO, UserService] = ZLayer.fromFunction(UserServiceLive(_))
+  val live: URLayer[DatabaseZIO, UserService] = ZLayer.fromFunction(UserServiceLive(_))
 }

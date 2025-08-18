@@ -17,17 +17,18 @@ trait Channel {
   val channelId: String
 }
 
-case class TwitchChannel(
-  id: Long,
-  channelId: String
-) extends Channel {
-  override val guildId: Option[String] = None
-  override val service: Service = Service.Twitch
-}
+case class ChannelImpl(
+  override val id: Long,
+  override val channelId: String,
+  override val service: Service,
+  override val guildId: Option[String]
+) extends Channel
 
 object Channel {
-  def apply(id: Long, channelId: String, service: String, guildId: Option[String]): IO[NotFoundProblem, Channel] = Service.valueOf(service) match {
-    case Service.Twitch => ZIO.succeed(TwitchChannel(id, channelId))
-    case _ => ZIO.fail(NotFoundProblem("Channel", s"No Channel type for $service"))
-  }
+  def apply(id: Long, channelId: String, service: Service, guildId: Option[String]): Channel = ChannelImpl(
+    id, 
+    channelId, 
+    service, 
+    guildId
+  )
 }

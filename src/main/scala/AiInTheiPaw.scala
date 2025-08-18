@@ -1,24 +1,25 @@
 package io.sommers.aiintheipaw
 
-import database.DataSourceProvider
+import command.CommandManager
 import http.WebServer
-import logic.{ChannelLogic, SprintLogic, UserLogic}
 import logic.message.{MessageLogic, TwitchServiceMessageLogic}
+import logic.{ChannelLogic, SprintLogic, UserLogic}
 import route.MessageRoutes
 import service.{ChannelServiceLive, SprintService, UserServiceLive}
 import twitch.TwitchNotificationHandlerImpl
 
-import io.sommers.aiintheipaw.command.CommandManager
-import io.sommers.aiintheipaw.command.sprint.SprintCommandGroup
-import io.sommers.aiintheipaw.command.util.UtilCommandGroup
+import io.sommers.zio.slick.DatabaseZIO
 import io.sommers.zio.twitch.ZIOTwitchLayers
 import io.sommers.zio.twitch.server.{TwitchMessageHandler, TwitchWebHookConfig}
+import slick.jdbc.PostgresProfile
 import zio.config.typesafe.TypesafeConfigProvider
 import zio.http.{Client, Server}
-import zio.{Clock, Runtime, Scope, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
+import zio.logging.backend.SLF4J
+import zio.{Runtime, Scope, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
 
 object AiInTheiPaw extends ZIOAppDefault {
-  override val bootstrap: ZLayer[Any, Nothing, Unit] = Runtime.setConfigProvider(TypesafeConfigProvider.fromResourcePath(true))
+  override val bootstrap: ZLayer[Any, Nothing, Unit] = Runtime.setConfigProvider(TypesafeConfigProvider.fromResourcePath(true)) ++
+    Runtime.removeDefaultLoggers >>> SLF4J.slf4j
 
   override def run: ZIO[ZIOAppArgs & Scope, Any, Any] = {
     (for {
@@ -37,12 +38,12 @@ object AiInTheiPaw extends ZIOAppDefault {
       TwitchMessageHandler.live,
       ZIOTwitchLayers.webhookLive,
       ChannelServiceLive.live,
-      DataSourceProvider.transactorLive,
       UserServiceLive.live,
       UserLogic.cachedLive,
       SprintLogic.live,
       CommandManager.fullLive,
-      SprintService.live
+      SprintService.live,
+      DatabaseZIO.live("slick", PostgresProfile)
     )
   }
 }

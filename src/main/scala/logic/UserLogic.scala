@@ -46,16 +46,14 @@ private case class UserLogicLive(
 
   override def findUserForService(service: Service, userId: String, displayName: String): IO[Problem, User] = {
     for {
-      userSourceResult <- userService.getUserSource(service, userId)
-      _ <- ZIO.when(userSourceResult.forall(!_.displayName.equals(displayName))) {
-        userSourceResult.map(userSource => userService.updateUserSource(userSource.copy(displayName = displayName)))
-          .getOrElse(ZIO.unit)
+      existingUserResult <- userService.getUser(service, userId)
+      _ <- ZIO.foreach(existingUserResult.map(_._2.filter(!_.displayName.equals(displayName)).toSet)
+        .getOrElse(Set.empty)
+      ) {
+        userSource => userService.updateUserSource(userSource.copy(displayName = displayName))
       }
-      userResult <- userSourceResult.fold(createUser(service, userId, displayName)) {
-        userSource => userService.getUser(userSource.userId)
-      }
-      (user, userSources) <- ZIO.fromOption(userResult)
-        .mapError(_ => NotFoundProblem("user", s"Found UserSource ${userSourceResult.fold("Missing")(_)}, but no User"))
+      (user, userSources) <- existingUserResult.map(ZIO.succeed(_))
+        .getOrElse(createUser(service, userId, displayName))
     } yield user.toUser(userSources)
   }.mapError(Problem(_))
 
@@ -67,9 +65,9 @@ private case class UserLogicLive(
     } yield user.toUser(userSources)
   }.mapError(Problem(_))
 
-  private def createUser(service: Service, userId: String, displayName: String): IO[Problem, Option[(UserEntity, Seq[UserSourceEntity])]] = {
+  private def createUser(service: Service, userId: String, displayName: String): IO[Problem, (UserEntity, Seq[UserSourceEntity])] = {
     userService.createUser(service, userId, displayName)
-      .map(tuple => Some(tuple._1, Seq(tuple._2)))
+      .map(tuple => (tuple._1, Seq(tuple._2)))
       .mapError(ThrowableProblem(_))
   }
 }

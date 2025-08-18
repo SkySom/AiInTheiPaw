@@ -8,5 +8,6 @@ enum SprintStatus(name: String, allowSignUp: Boolean, allowCounts: Boolean) {
   case AwaitingCounts extends SprintStatus("Awaiting Counts", false, true)
   case Complete extends SprintStatus("Complete", false, false)
   case Pause extends SprintStatus("Pause", true, true)
+  case Cancelled extends SprintStatus("Cancelled", false, false)
   case Unknown extends SprintStatus("Unknown", false, false)
 }

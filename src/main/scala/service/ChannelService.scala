@@ -1,25 +1,23 @@
 package io.sommers.aiintheipaw
 package service
 
-import database.CamelCaseNoEntitySqlNameMapper
 import model.channel.Channel
-import model.problem.NotFoundProblem
 import model.service.Service
 
-import com.augustnagro.magnum.*
-import com.augustnagro.magnum.magzio.TransactorZIO
-import zio.{IO, Task, URLayer, ZLayer}
+import io.sommers.zio.slick.DatabaseZIO
+import database.AiPostgresProfile.api.*
+import slick.lifted.Tag
+import zio.{Task, URLayer, ZLayer}
 
 import scala.language.implicitConversions
 
-@Table(PostgresDbType, CamelCaseNoEntitySqlNameMapper)
 case class ChannelEntity(
-  @Id id: Long,
+  id: Long,
   channelId: String,
-  service: String,
+  service: Service,
   guildId: Option[String]
-)derives DbCodec {
-  def toChannel: IO[NotFoundProblem, Channel] = Channel(
+) {
+  def toChannel: Channel = Channel(
     id,
     channelId,
     service,
@@ -27,12 +25,26 @@ case class ChannelEntity(
   )
 }
 
-@Table(PostgresDbType, CamelCaseNoEntitySqlNameMapper)
 case class ChannelCreate(
   channelId: String,
-  service: String,
+  service: Service,
   guildId: Option[String]
-) derives DbCodec
+)
+
+class ChannelTable(tag: Tag) extends Table[ChannelEntity](tag, "channel") {
+  def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+
+  def channelId = column[String]("channel_id")
+
+  def service = column[Service]("service")
+
+  def guildId = column[String]("guild_id")
+
+  def * = (id, channelId, service, guildId.?)
+    .mapTo[ChannelEntity]
+}
+
+private val channelQuery = TableQuery[ChannelTable]
 
 trait ChannelService {
   def getChannel(id: Long): Task[Option[ChannelEntity]]
@@ -43,36 +55,35 @@ trait ChannelService {
 }
 
 case class ChannelServiceLive(
-  transactorZIO: TransactorZIO
+  databaseZIO: DatabaseZIO
 ) extends ChannelService {
 
-  private val channelRepo = Repo[ChannelCreate, ChannelEntity, Long]
-
   override def getChannel(id: Long): Task[Option[ChannelEntity]] = {
-    transactorZIO.connect:
-      channelRepo.findById(id)
+    databaseZIO.run(channelQuery.filter(_.id === id)
+      .take(1)
+      .result
+      .headOption
+    )
   }
 
   override def createChannel(channelCreate: ChannelCreate): Task[ChannelEntity] = {
-    transactorZIO.connect:
-      channelRepo.insertReturning(channelCreate)
+    databaseZIO.run {
+      (channelQuery returning channelQuery) +=
+        ChannelEntity(0, channelCreate.channelId, channelCreate.service, channelCreate.guildId)
+    }
   }
 
   override def getChannel(service: Service, channelId: String, guildIdOpt: Option[String]): Task[Option[ChannelEntity]] = {
-    var spec = Spec[ChannelEntity]
-      .where(sql"service = ${service.toString}")
-      .where(sql"channel_id = $channelId")
-
-    spec = guildIdOpt.fold(spec.where(sql"guild_id is null")) { guildId =>
-      spec.where(sql"guild_id = $guildId")
-    }
-    
-    transactorZIO.connect:
-      channelRepo.findAll(spec)
-        .headOption
+    databaseZIO.run(channelQuery.filter(_.channelId === channelId)
+      .filter(_.service === service)
+      .filter(_.guildId === guildIdOpt)
+      .take(1)
+      .result
+      .headOption
+    )
   }
 }
 
 object ChannelServiceLive {
-  val live: URLayer[TransactorZIO, ChannelServiceLive] = ZLayer.fromFunction(ChannelServiceLive(_))
+  val live: URLayer[DatabaseZIO, ChannelServiceLive] = ZLayer.fromFunction(ChannelServiceLive(_))
 }
