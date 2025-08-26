@@ -1,11 +1,7 @@
 package io.sommers.aiintheipaw
 package model.channel
 
-import model.problem.NotFoundProblem
-import model.service.Service.Twitch
 import model.service.Service
-
-import zio.{IO, ZIO}
 
 trait Channel {
   val id: Long
@@ -26,9 +22,9 @@ case class ChannelImpl(
 
 object Channel {
   def apply(id: Long, channelId: String, service: Service, guildId: Option[String]): Channel = ChannelImpl(
-    id, 
-    channelId, 
-    service, 
+    id,
+    channelId,
+    service,
     guildId
   )
 }

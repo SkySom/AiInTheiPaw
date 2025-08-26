@@ -1,6 +1,8 @@
 package io.sommers.aiintheipaw
 package generator
 
+import logic.UserLogic
+import model.problem.Problem
 import model.service.Service.Test
 import model.user.{User, UserSource}
 
@@ -18,4 +20,10 @@ object TestUserGenerator {
     userServiceId <- ZIO.randomWith(_.nextString(10))
     displayName <- ZIO.randomWith(_.nextString(10))
   } yield UserSource(id, userId, Test, userServiceId, displayName)
+
+  def generateAndInsertUser(): ZIO[UserLogic, Problem, User] = for {
+    userServiceId <- ZIO.randomWith(_.nextString(10))
+    displayName <- ZIO.randomWith(_.nextString(10))
+    user <- ZIO.serviceWithZIO[UserLogic](_.findUserForService(Test, userServiceId, displayName))
+  } yield user
 }

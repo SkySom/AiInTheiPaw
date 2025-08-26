@@ -87,12 +87,12 @@ private case class UserServiceLive(
     }
   }
 
-  override def getUser(service: Service, userId: String): Task[Option[(UserEntity, Seq[UserSourceEntity])]] = {
+  override def getUser(service: Service, serviceUserId: String): Task[Option[(UserEntity, Seq[UserSourceEntity])]] = {
     databaseZIO.runStream {
       {
         for {
           user <- userQuery.filter(_.id in userSourceQuery.filter(_.service === service)
-            .filter(_.serviceUserId === userId)
+            .filter(_.serviceUserId === serviceUserId)
             .map(_.userId)
           )
           userSources <- userSourceQuery if userSources.userId === user.id

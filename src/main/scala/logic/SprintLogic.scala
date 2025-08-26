@@ -20,7 +20,7 @@ trait SprintLogic {
 }
 
 object SprintLogic {
-  val live: URLayer[SprintService & UserLogic & ChannelLogic, SprintLogic] = ZLayer.fromFunction(SprintLogicLive(_, _, _))
+  def live: URLayer[SprintService & UserLogic & ChannelLogic, SprintLogic] = ZLayer.fromFunction(SprintLogicLive(_, _, _))
 }
 
 case class SprintLogicLive(

@@ -58,9 +58,9 @@ case class ChannelLogicCachedLive(
 }
 
 object ChannelLogic {
-  val live: URLayer[ChannelService, ChannelLogic] = ZLayer.fromFunction(ChannelLogicLive(_))
+  def live: URLayer[ChannelService, ChannelLogic] = ZLayer.fromFunction(ChannelLogicLive(_))
 
-  val cachedLive: ZLayer[ChannelService, Nothing, ChannelLogicCachedLive] = live >>> ZLayer.fromZIO(
+  def cachedLive: ZLayer[ChannelService, Nothing, ChannelLogicCachedLive] = live >>> ZLayer.fromZIO(
     {
       for {
         channelLogic <- ZIO.service[ChannelLogic]
