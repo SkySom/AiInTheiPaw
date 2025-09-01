@@ -4,6 +4,8 @@ package logic
 import generator.{TestChannelGenerator, TestUserGenerator}
 import mock.service.{ChannelServiceMock, SprintServiceMock, UserServiceMock}
 import model.problem.{InvalidValueProblem, Problem}
+import model.sprint.SprintStatus.SignUp
+import util.AiCustomAssertions
 
 import zio.test.*
 import zio.{Scope, ZIO, durationInt}
@@ -15,7 +17,7 @@ object SprintLogicSpec extends ZIOSpecDefault {
         user <- TestUserGenerator.generateUser()
         channel <- TestChannelGenerator.generateChannel()
         sprint <- ZIO.serviceWithZIO[SprintLogic](_.createSprint(channel, user, 1.minute))
-      } yield assertCompletes
+      } yield assertTrue(sprint.sections.is(_.custom(AiCustomAssertions.seqHead)).status == SignUp)
     }.provide(layers),
     test("createSprint() should fail to create a Sprint if one is active") {
       for {
@@ -24,6 +26,19 @@ object SprintLogicSpec extends ZIOSpecDefault {
         sprint1 <- ZIO.serviceWithZIO[SprintLogic](_.createSprint(channel, user, 1.minute))
         sprint2 <- ZIO.serviceWithZIO[SprintLogic](_.createSprint(channel, user, 1.minute)).exit
       } yield assertTrue(sprint2.is(_.failure) == InvalidValueProblem("There is already an active sprint"))
+    }.provide(
+      SprintServiceMock.mock,
+      UserServiceMock.mock >>> UserLogic.live,
+      ChannelServiceMock.mock >>> ChannelLogic.live,
+      SprintLogic.live
+    ),
+    test("joinSprint() should succeed if sprint in status that allows sign up") {
+      for {
+        user <- TestUserGenerator.generateAndInsertUser()
+        channel <- TestChannelGenerator.generateAndInsertChannel()
+        sprint <- ZIO.serviceWithZIO[SprintLogic](_.createSprint(channel, user, 1.minute))
+        entry <- ZIO.serviceWithZIO[SprintLogic](_.joinSprint(channel, user, 125))
+      } yield assertTrue(entry.startingWords == 125)
     }.provide(
       SprintServiceMock.mock,
       UserServiceMock.mock >>> UserLogic.live,

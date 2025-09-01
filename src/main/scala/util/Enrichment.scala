@@ -7,7 +7,7 @@ import zio.http.Header.Accept.MediaTypeWithQFactor
 import zio.http.codec.{CodecConfig, ContentCodec, StatusCodec}
 import zio.http.endpoint.{AuthType, Endpoint}
 import zio.http.{Handler, Header, MediaType, Request, Response, Route, Status}
-import zio.{Chunk, Task, Trace, ZIO}
+import zio.{Chunk, IO, Task, Trace, ZIO}
 
 object Enrichment {
   implicit class EnrichEndpoint[PathInput, Input, Err <: Problem, Output, Auth <: AuthType](endpoint: Endpoint[PathInput, Input, Err, Output, Auth]) {
@@ -35,5 +35,23 @@ object Enrichment {
     request.headers
       .getAll(Header.Accept)
       .flatMap(_.mimeTypes) :+ MediaTypeWithQFactor(MediaType.application.`json`, Some(0.0))
+  }
+  
+  implicit class EnrichZIOOption[IN, ERR, OUT](zio: ZIO[IN, ERR, Option[OUT]]) {
+    def getOrFail(fail: => ERR): ZIO[IN, ERR, OUT] = zio.flatMap(opt => opt.getOrZIOFail(fail))
+  }
+  
+  implicit class EnrichOption[OUT](option: Option[OUT]) {
+    def getOrZIOFail[ERR](fail: => ERR)(implicit trace: Trace): IO[ERR, OUT] = option.fold(ZIO.fail(fail)) {
+      ZIO.succeed(_)
+    }
+  }
+  
+  implicit class EnrichBoolean(boolean: Boolean) {
+    def toZIO[ERR](fail: => ERR): IO[ERR, Unit] = if (boolean) {
+      ZIO.succeed(())
+    } else {
+      ZIO.fail(fail)
+    }
   }
 }

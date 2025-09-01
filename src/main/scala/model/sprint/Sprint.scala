@@ -28,6 +28,5 @@ case class SprintEntry(
   user: User,
   startSectionId: Long,
   startingWords: Long,
-  endingWords: Option[Long],
-  timeRemaining: Duration
+  endingWords: Option[Long]
 )

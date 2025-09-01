@@ -70,8 +70,7 @@ case class SprintEntryEntity(
   sprintId: Long,
   startSectionId: Long,
   startingWords: Long,
-  endingWords: Option[Long],
-  timeRemaining: Duration
+  endingWords: Option[Long]
 )
 
 class SprintEntryTable(tag: Tag) extends Table[SprintEntryEntity](tag, "sprint_entry") {
@@ -87,8 +86,6 @@ class SprintEntryTable(tag: Tag) extends Table[SprintEntryEntity](tag, "sprint_e
 
   def endingWords = column[Option[Long]]("ending_words")
 
-  def timeRemaining = column[Duration]("time_remaining")
-
   @unused
   def userIdForeignKey: ForeignKeyQuery[UserTable, UserEntity] = foreignKey("user_id_fk", userId, userQuery)(_.id)
 
@@ -98,7 +95,7 @@ class SprintEntryTable(tag: Tag) extends Table[SprintEntryEntity](tag, "sprint_e
   @unused
   def startSectionIdForeignKey = foreignKey("start_section_id_fk", startSectionId, sprintSectionQuery)(_.id)
 
-  def * : ProvenShape[SprintEntryEntity] = (id, userId, sprintId, startSectionId, startingWords, endingWords, timeRemaining).mapTo[SprintEntryEntity]
+  def * : ProvenShape[SprintEntryEntity] = (id, userId, sprintId, startSectionId, startingWords, endingWords).mapTo[SprintEntryEntity]
 }
 
 val sprintEntryQuery = TableQuery[SprintEntryTable]
@@ -108,7 +105,7 @@ trait SprintService {
 
   def createSprintSection(sprintId: Long, sprintStatus: SprintStatus, duration: Duration, startTime: Instant): Task[SprintSectionEntity]
 
-  def joinSprint(userId: Long, startSectionId: Long, startingWords: Long, timeRemaining: Duration): Task[SprintEntryEntity]
+  def joinSprint(userId: Long, startSectionId: Long, startingWords: Long): Task[SprintEntryEntity]
 
   def submitCounts(userId: Long, sprintId: Long, endingWords: Long): Task[Boolean]
 
@@ -139,13 +136,13 @@ case class SprintServiceLive(
     }
   }
 
-  override def joinSprint(userId: Long, startSectionId: Long, startingWords: Long, timeRemaining: Duration): Task[SprintEntryEntity] = {
+  override def joinSprint(userId: Long, startSectionId: Long, startingWords: Long): Task[SprintEntryEntity] = {
     databaseZIO.run {
       implicit _ =>
         for {
           sprintIds <- sprintSectionQuery.filter(_.id === startSectionId).map(_.sprintId).result
           sprintId <- sprintIds.headOption.map(DBIO.successful).getOrElse(DBIO.failed(new IllegalArgumentException("Invalid Section Id")))
-          sprintEntry <- (sprintEntryQuery returning sprintEntryQuery) += SprintEntryEntity(0, userId, sprintId, startSectionId, startingWords, None, timeRemaining)
+          sprintEntry <- (sprintEntryQuery returning sprintEntryQuery) += SprintEntryEntity(0, userId, sprintId, startSectionId, startingWords, None)
         } yield sprintEntry
     }
   }

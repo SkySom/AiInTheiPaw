@@ -2,11 +2,12 @@ package io.sommers.aiintheipaw
 package logic
 
 import model.channel.Channel
-import model.problem.{InvalidValueProblem, Problem}
+import model.problem.{InvalidValueProblem, NotFoundProblem, Problem}
 import model.sprint.SprintStatus.SignUp
 import model.sprint.{Sprint, SprintEntry, SprintSection}
 import model.user.User
 import service.{SprintEntity, SprintEntryEntity, SprintSectionEntity, SprintService}
+import util.Enrichment.{EnrichBoolean, EnrichOption, EnrichZIOOption}
 
 import zio.{Duration, IO, URLayer, ZIO, ZLayer}
 
@@ -17,6 +18,8 @@ trait SprintLogic {
   def createSprint(channel: Channel, user: User, duration: Duration): IO[Problem, Sprint]
 
   def getActiveSprintByChannel(channel: Channel): IO[Problem, Option[Sprint]]
+
+  def joinSprint(channel: Channel, user: User, startingWords: Long): IO[Problem, SprintEntry]
 }
 
 object SprintLogic {
@@ -53,6 +56,16 @@ case class SprintLogicLive(
       .getOrElse[IO[Problem, Option[Sprint]]](ZIO.succeed(None))
   } yield activeSprint
 
+  override def joinSprint(channel: Channel, user: User, startingWords: Long): IO[Problem, SprintEntry] = for {
+    activeSprint <- getActiveSprintByChannel(channel)
+      .getOrFail(NotFoundProblem("sprint", "No active sprint for channel"))
+    activeSection: SprintSection <- activeSprint.sections.lastOption
+      .getOrZIOFail(InvalidValueProblem(s"No active section for sprint ${activeSprint.id}"))
+    _ <- activeSection.status.allowSignUp.toZIO(InvalidValueProblem(s"Cannot sign up when sprint is in status ${activeSection.status}"))
+    signUp <- sprintService.joinSprint(user.id, activeSection.id, startingWords)
+      .mapError(Problem(_))
+      .flatMap(entityToEntry)
+  } yield signUp
 
   private def entityToSection(sprintSectionEntity: SprintSectionEntity): SprintSection = SprintSection(
     sprintSectionEntity.id,
@@ -68,17 +81,17 @@ case class SprintLogicLive(
     user,
     sprintEntryEntity.startSectionId,
     sprintEntryEntity.startingWords,
-    sprintEntryEntity.endingWords,
-    sprintEntryEntity.timeRemaining
+    sprintEntryEntity.endingWords
   )
 
   private def entityToSprint(sprintEntity: SprintEntity, sprintSectionEntities: Seq[SprintSectionEntity], sprintEntryEntities: Seq[SprintEntryEntity]): IO[Problem, Sprint] = for {
     startedByUser <- userLogic.getUserById(sprintEntity.startedByUserId)
     channel <- channelLogic.getChannel(sprintEntity.channelId)
-    entries <- ZIO.foldLeft(sprintEntryEntities)(List.empty[SprintEntry]) { (sprintEntries, entity) =>
-      for {
-        sprintEntry <- entityToEntry(entity)
-      } yield sprintEntries.appended(sprintEntry)
+    entries <- ZIO.foldLeft(sprintEntryEntities)(List.empty[SprintEntry]) {
+      (sprintEntries, entity) =>
+        for {
+          sprintEntry <- entityToEntry(entity)
+        } yield sprintEntries.appended(sprintEntry)
     }
   } yield Sprint(
     sprintEntity.id,

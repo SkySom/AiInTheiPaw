@@ -1,7 +1,7 @@
 package io.sommers.aiintheipaw
 package command.util
 
-import command.{Command, CommandOption}
+import command.Command
 import logic.message.MessageLogic
 import model.message.ReceivedMessage
 import model.problem.Problem

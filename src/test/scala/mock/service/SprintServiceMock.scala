@@ -8,7 +8,6 @@ import zio.{Duration, Task, ULayer, ZIO, ZLayer}
 
 import java.time.Instant
 import scala.collection.mutable
-import scala.math.Ordered.orderingToOrdered
 
 class SprintServiceMock extends SprintService {
   val sprints: mutable.Map[Long, (SprintEntity, mutable.ArrayBuffer[SprintSectionEntity], mutable.ArrayBuffer[SprintEntryEntity])] = new mutable.HashMap()
@@ -36,7 +35,18 @@ class SprintServiceMock extends SprintService {
       }
   }
 
-  override def joinSprint(userId: Long, startSectionId: Long, startingWords: Long, timeRemaining: Duration): Task[SprintEntryEntity] = ???
+  override def joinSprint(userId: Long, startSectionId: Long, startingWords: Long): Task[SprintEntryEntity] = {
+    sprints.find(_._2._2.exists(_.id == startSectionId))
+      .fold(ZIO.fail(new IllegalStateException(s"No Sprint Section exists for $startSectionId"))) {
+        sprint => {
+          val entryId = sprints.values.map(_._3.map(_.id).maxOption.getOrElse(0L)).max
+          val entry = SprintEntryEntity(entryId, userId, sprint._2._1.id, startSectionId, startingWords, None)
+
+          sprint._2._3.append(entry)
+          ZIO.succeed(entry)
+        }
+      }
+  }
 
   override def submitCounts(userId: Long, sprintId: Long, endingWords: Long): Task[Boolean] = ???
 
