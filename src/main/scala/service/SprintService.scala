@@ -17,6 +17,7 @@ case class SprintEntity(
   id: Long,
   channelId: Long,
   startedByUserId: Long,
+  progressDuration: Duration
 )
 
 class SprintTable(tag: Tag) extends Table[SprintEntity](tag, "sprint") {
@@ -25,6 +26,8 @@ class SprintTable(tag: Tag) extends Table[SprintEntity](tag, "sprint") {
   def channelId = column[Long]("channel_id")
 
   private def startedById = column[Long]("started_by_id")
+  
+  def progressDuration = column[Duration]("progress_duration")
 
   @unused
   def channelIdForeignKey: ForeignKeyQuery[ChannelTable, ChannelEntity] = foreignKey("channel_id_fk", channelId, channelQuery)(_.id)
@@ -32,7 +35,7 @@ class SprintTable(tag: Tag) extends Table[SprintEntity](tag, "sprint") {
   @unused
   def userIdForeignKey: ForeignKeyQuery[UserTable, UserEntity] = foreignKey("started_by_id_fk", startedById, userQuery)(_.id)
 
-  def * : ProvenShape[SprintEntity] = (id, channelId, startedById).mapTo[SprintEntity]
+  def * : ProvenShape[SprintEntity] = (id, channelId, startedById, progressDuration).mapTo[SprintEntity]
 }
 
 val sprintQuery = TableQuery[SprintTable]
@@ -101,7 +104,7 @@ class SprintEntryTable(tag: Tag) extends Table[SprintEntryEntity](tag, "sprint_e
 val sprintEntryQuery = TableQuery[SprintEntryTable]
 
 trait SprintService {
-  def createSprint(channelId: Long, startedById: Long): Task[SprintEntity]
+  def createSprint(channelId: Long, startedById: Long, progressDuration: Duration): Task[SprintEntity]
 
   def createSprintSection(sprintId: Long, sprintStatus: SprintStatus, duration: Duration, startTime: Instant): Task[SprintSectionEntity]
 
@@ -110,6 +113,8 @@ trait SprintService {
   def submitCounts(userId: Long, sprintId: Long, endingWords: Long): Task[Boolean]
 
   def getSprintById(id: Long): Task[Option[(SprintEntity, Seq[SprintSectionEntity], Seq[SprintEntryEntity])]]
+  
+  def getSprintBySectionId(id: Long): Task[Option[(SprintEntity, Seq[SprintSectionEntity], Seq[SprintEntryEntity])]]
 
   def getActiveSprintByChannelId(channelId: Long): Task[Option[(SprintEntity, Seq[SprintSectionEntity], Seq[SprintEntryEntity])]]
 }
@@ -122,8 +127,8 @@ case class SprintServiceLive(
   databaseZIO: DatabaseZIO
 ) extends SprintService {
 
-  override def createSprint(channelId: Long, startedById: Long): Task[SprintEntity] = {
-    val newSprint = SprintEntity(0, channelId, startedById)
+  override def createSprint(channelId: Long, startedById: Long, progressDuration: Duration): Task[SprintEntity] = {
+    val newSprint = SprintEntity(0, channelId, startedById, progressDuration)
     databaseZIO.run {
       (sprintQuery returning sprintEntryQuery.map(_.id) into ((sprint, id) => sprint.copy(id = id))) += newSprint
     }
@@ -170,6 +175,20 @@ case class SprintServiceLive(
     }
   }
 
+  override def getSprintBySectionId(id: Long): Task[Option[(SprintEntity, Seq[SprintSectionEntity], Seq[SprintEntryEntity])]] = {
+    databaseZIO.run { implicit _: ExecutionContext =>
+      for {
+        sprintSection <- getSprintSectionByIdDBIO(id)
+        sprint <- sprintSection.map(value => getSprintByIdDBIO(value.sprintId))
+          .getOrElse(DBIO.successful(None))
+        sprintEntries <- sprint.map(value => getSprintEntriesForSprintDBIO(value.id))
+          .getOrElse(DBIO.successful(Seq()))
+        sprintSections <- sprint.map(value => getSprintSectionEntriesForSprintDBIO(value.id))
+          .getOrElse(DBIO.successful(Seq()))
+      } yield sprint.map((_, sprintSections, sprintEntries))
+    }
+  }
+
   override def getActiveSprintByChannelId(channelId: Long): Task[Option[(SprintEntity, Seq[SprintSectionEntity], Seq[SprintEntryEntity])]] = {
     databaseZIO.run { implicit _: ExecutionContext =>
       for {
@@ -206,5 +225,13 @@ case class SprintServiceLive(
   private def getSprintSectionEntriesForSprintDBIO(sprintId: Long): DBIO[Seq[SprintSectionEntity]] = {
     sprintSectionQuery.filter(_.sprintId === sprintId)
       .result
+  }
+
+  private def getSprintSectionByIdDBIO(id: Long): DBIO[Option[SprintSectionEntity]] = {
+    sprintSectionQuery.filter(_.id === id)
+      .sortBy(_.id)
+      .take(1)
+      .result
+      .headOption
   }
 }

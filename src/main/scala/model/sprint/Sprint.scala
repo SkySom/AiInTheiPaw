@@ -12,6 +12,7 @@ case class Sprint(
   id: Long,
   channel: Channel,
   startedBy: User,
+  progressDuration: Duration,
   sections: Seq[SprintSection],
   entries: Seq[SprintEntry]
 )

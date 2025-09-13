@@ -5,6 +5,8 @@ import zio.ZIO
 
 trait Problem {
   val problemType: ProblemType
+  
+  def message: String
 }
 
 object Problem {

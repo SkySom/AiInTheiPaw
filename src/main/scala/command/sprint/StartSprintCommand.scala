@@ -2,18 +2,20 @@ package io.sommers.aiintheipaw
 package command.sprint
 
 import command.{Command, CommandOption, DurationCommandOption}
+import event.EventScheduler
 import logic.SprintLogic
 import logic.message.MessageLogic
 import model.message.ReceivedMessage
 import model.problem.Problem
 
-import zio.{Duration, IO, URLayer, ZLayer}
+import zio.{Duration, IO, URLayer, ZEnvironment, ZLayer}
 
 import java.util.concurrent.TimeUnit
 
 case class StartSprintCommand(
   sprintLogic: SprintLogic,
-  messageLogic: MessageLogic
+  messageLogic: MessageLogic,
+  eventScheduler: EventScheduler
 ) extends Command {
   private val durationCommandOption = DurationCommandOption(
     "sprintDuration",
@@ -28,11 +30,12 @@ case class StartSprintCommand(
     for {
       duration <- durationCommandOption.find(args)
       sprint <- sprintLogic.createSprint(message.channel, message.user, duration.getOrElse(Duration(1, TimeUnit.MINUTES)))
+        .provideEnvironment(ZEnvironment(eventScheduler))
       _ <- messageLogic.sendMessage(message.channel, Some(message.messageId), "Sprint has entered Sign Up")
     } yield ()
   }.mapError(Problem(_))
 }
 
 object StartSprintCommand {
-  val live: URLayer[SprintLogic & MessageLogic, StartSprintCommand] = ZLayer.fromFunction(StartSprintCommand(_, _))
+  val live: URLayer[SprintLogic & MessageLogic & EventScheduler, StartSprintCommand] = ZLayer.fromFunction(StartSprintCommand.apply)
 }

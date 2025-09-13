@@ -3,11 +3,11 @@ package event
 
 import model.problem.Problem
 
-import zio.IO
+import zio.ZIO
 import zio.json.ast.Json
 
 trait EventHandler {
   def name: String
 
-  def handleEvent(json: Json): IO[Problem, Unit]
+  def handleEvent(json: Json): ZIO[EventScheduler, Problem, Unit]
 }

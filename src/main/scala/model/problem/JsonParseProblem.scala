@@ -1,8 +1,8 @@
 package io.sommers.aiintheipaw
 package model.problem
 
-case class InvalidStateProblem(
+case class JsonParseProblem(
   override val message: String
 ) extends Problem {
-  override val problemType: ProblemType = ProblemType.ServerProblem
+  override val problemType: ProblemType = ProblemType.ClientProblem
 }

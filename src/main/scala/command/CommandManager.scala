@@ -6,6 +6,7 @@ import command.util.UtilCommandGroup
 import logic.SprintLogic
 import logic.message.MessageLogic
 
+import io.sommers.aiintheipaw.event.EventScheduler
 import zio.{URLayer, ZLayer}
 
 trait CommandManager {
@@ -22,14 +23,14 @@ object CommandManager {
   val live: URLayer[Seq[CommandGroup], CommandManagerImpl] = ZLayer.fromFunction(CommandManagerImpl(_))
 
   //noinspection ScalaWeakerAccess
-  val allCommandLayer: URLayer[SprintLogic & MessageLogic, Seq[CommandGroup]] = ZLayer.collectAll(
+  val allCommandLayer: URLayer[SprintLogic & MessageLogic & EventScheduler, Seq[CommandGroup]] = ZLayer.collectAll(
     Seq(
       SprintCommandGroup.fullLayer,
       UtilCommandGroup.fullLayer
     )
   )
 
-  val fullLive: URLayer[SprintLogic & MessageLogic, CommandManagerImpl] = allCommandLayer >>> live
+  val fullLive: URLayer[SprintLogic & MessageLogic & EventScheduler, CommandManagerImpl] = allCommandLayer >>> live
 }
 
 case class CommandManagerImpl(

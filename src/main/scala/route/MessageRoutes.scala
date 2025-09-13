@@ -2,10 +2,9 @@ package io.sommers.aiintheipaw
 package route
 
 import http.request.{SendMessageRequest, SendMessageResponse}
+import logic.ChannelLogic
 import logic.message.MessageLogic
-import logic.{ChannelLogic, ServiceManager}
 import model.problem.NotFoundProblem
-import model.service.Service.Twitch
 import util.Enrichment.EnrichEndpoint
 
 import zio.http.Status.NotFound
@@ -16,9 +15,9 @@ import zio.{URLayer, ZLayer}
 case class MessageRoutes(
   channelLogic: ChannelLogic,
   messageLogic: MessageLogic
-) {
+) extends RouteGroup {
 
-  def routes: Seq[Route[Any, Response]] = Seq(
+  override def routes: Seq[Route[Any, Response]] = Seq(
     botMessageRoute
   )
 

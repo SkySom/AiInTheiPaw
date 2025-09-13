@@ -1,23 +1,23 @@
 package io.sommers.aiintheipaw
 package http
 
-import route.MessageRoutes
+import route.{MessageRoutes, RouteGroup}
 
 import io.sommers.zio.twitch.server.{TwitchMessageHandler, TwitchWebHookConfig, TwitchWebHookRoutes}
 import zio.http.{Middleware, Routes, Server}
 import zio.{URLayer, ZIO, ZLayer}
 
 case class WebServer(
-  messageRoutes: MessageRoutes,
-  twitchWebHookRoutes: TwitchWebHookRoutes
+  twitchWebHookRoutes: TwitchWebHookRoutes,
+  routeGroups: List[RouteGroup]
 ) {
-  def serve(): ZIO[TwitchWebHookConfig & TwitchMessageHandler & Server, Throwable, Any] = Server.serve(
+  def serve(): ZIO[Server, Throwable, Any] = Server.serve(
     Routes.fromIterable(
-      messageRoutes.routes ++ twitchWebHookRoutes.routes
+      twitchWebHookRoutes.routes ++ routeGroups.flatMap(_.routes)
     )
   )
 }
 
 object WebServer {
-  val live: URLayer[MessageRoutes & TwitchWebHookRoutes, WebServer] = ZLayer.fromFunction(WebServer(_, _))
+  val live: URLayer[TwitchWebHookRoutes & List[RouteGroup], WebServer] = ZLayer.fromFunction(WebServer(_, _))
 }

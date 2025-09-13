@@ -5,6 +5,8 @@ import event.EventScheduler
 import model.problem.{InvalidValueProblem, Problem}
 import util.Enrichment.EnrichOption
 
+import io.sommers.aiintheipaw.route.{AiClient, AiTestClient}
+import zio.http.TestClient
 import zio.json.ast.Json
 import zio.json.{JsonDecoder, JsonEncoder}
 import zio.test.{Spec, TestClock, TestEnvironment, ZIOSpecDefault, assertTrue}
@@ -22,7 +24,7 @@ object ZIOEventSchedulerSpec extends ZIOSpecDefault {
         _ <- TestClock.adjust(1.hours)
         done <- promise.isDone
       } yield assertTrue(!startDone) && assertTrue(done)
-    }.provide(EventScheduler.zioLive, EventRouter.live, PromiseEventHandler.allEventHandlers, PromiseEventHandler.layer)
+    }.provide(EventRouter.live, PromiseEventHandler.allEventHandlers, PromiseEventHandler.layer, AiTestClient.layer)
   )
 }
 

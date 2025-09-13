@@ -4,10 +4,13 @@ import command.CommandManager
 import http.WebServer
 import logic.message.{MessageLogic, TwitchServiceMessageLogic}
 import logic.{ChannelLogic, SprintLogic, UserLogic}
-import route.MessageRoutes
+import route.{AiClient, EventRouterRoutes, MessageRoutes}
 import service.{ChannelServiceLive, SprintService, UserServiceLive}
 import twitch.TwitchNotificationHandlerImpl
 
+import io.sommers.aiintheipaw.event.{EventRouter, EventScheduler, ZIOEventScheduler}
+import io.sommers.aiintheipaw.eventhandler.SprintEventHandler
+import io.sommers.zio.localize.{Localizer, ResourceProvider}
 import io.sommers.zio.slick.DatabaseZIO
 import io.sommers.zio.twitch.ZIOTwitchLayers
 import io.sommers.zio.twitch.server.{TwitchMessageHandler, TwitchWebHookConfig}
@@ -16,6 +19,8 @@ import zio.config.typesafe.TypesafeConfigProvider
 import zio.http.{Client, Server}
 import zio.logging.backend.SLF4J
 import zio.{Runtime, Scope, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
+
+import java.util.Locale
 
 object AiInTheiPaw extends ZIOAppDefault {
   override val bootstrap: ZLayer[Any, Nothing, Unit] = Runtime.setConfigProvider(TypesafeConfigProvider.fromResourcePath(true)) ++
@@ -28,14 +33,11 @@ object AiInTheiPaw extends ZIOAppDefault {
       WebServer.live,
       Server.default,
       ZIOTwitchLayers.clientLive,
-      MessageRoutes.live,
       ChannelLogic.cachedLive,
       MessageLogic.fullLive,
       TwitchServiceMessageLogic.live,
       Client.default,
       TwitchNotificationHandlerImpl.layer,
-      TwitchWebHookConfig.live,
-      TwitchMessageHandler.live,
       ZIOTwitchLayers.webhookLive,
       ChannelServiceLive.live,
       UserServiceLive.live,
@@ -43,7 +45,22 @@ object AiInTheiPaw extends ZIOAppDefault {
       SprintLogic.live,
       CommandManager.fullLive,
       SprintService.live,
-      DatabaseZIO.live("slick", PostgresProfile)
+      DatabaseZIO.live("slick", PostgresProfile),
+      ResourceProvider.resourceBundleProvider("localization/localization") >>> Localizer.live,
+      eventHandlerLayers(),
+      EventScheduler.zioLive,
+      EventRouter.live,
+      AiClient.liveWeb,
+      routeGroupLayers()
     )
   }
+  
+  private def eventHandlerLayers() = ZLayer.collectAll(List(
+    SprintEventHandler.live
+  ))
+  
+  private def routeGroupLayers() = ZLayer.collectAll(List(
+    MessageRoutes.live,
+    EventRouterRoutes.live
+  ))
 }

@@ -12,12 +12,12 @@ import scala.collection.mutable
 class SprintServiceMock extends SprintService {
   val sprints: mutable.Map[Long, (SprintEntity, mutable.ArrayBuffer[SprintSectionEntity], mutable.ArrayBuffer[SprintEntryEntity])] = new mutable.HashMap()
 
-  override def createSprint(channelId: Long, startedById: Long): Task[SprintEntity] = {
+  override def createSprint(channelId: Long, startedById: Long, progressDuration: Duration): Task[SprintEntity] = {
     if (sprints.values.exists(sprint => sprint._1.channelId == channelId && !sprint._2.exists(_.status.active))) {
       ZIO.fail(new IllegalStateException("Already Exists"))
     } else {
       val id = sprints.keys.maxOption.getOrElse(1L)
-      val sprint = (SprintEntity(id, channelId, startedById), mutable.ArrayBuffer[SprintSectionEntity](), mutable.ArrayBuffer[SprintEntryEntity]())
+      val sprint = (SprintEntity(id, channelId, startedById, progressDuration), mutable.ArrayBuffer[SprintSectionEntity](), mutable.ArrayBuffer[SprintEntryEntity]())
       sprints.put(id, sprint)
       ZIO.succeed(sprint._1)
     }
@@ -61,8 +61,15 @@ class SprintServiceMock extends SprintService {
       .map(_._2)
       .map(sprint => (sprint._1, sprint._2.toSeq, sprint._3.toSeq))
     )
+
+  override def getSprintBySectionId(id: Long): Task[Option[(SprintEntity, Seq[SprintSectionEntity], Seq[SprintEntryEntity])]] = {
+    ZIO.succeed(sprints.find(sprint => sprint._2._2.exists(_.id == id))
+      .map(_._2)
+      .map(sprint => (sprint._1, sprint._2.toSeq, sprint._3.toSeq))
+    )
+  }
 }
 
 object SprintServiceMock {
-  def mock: ULayer[SprintServiceMock] = ZLayer.succeed(new SprintServiceMock)
+  val mock: ULayer[SprintServiceMock] = ZLayer.succeed(new SprintServiceMock)
 }

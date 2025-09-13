@@ -23,7 +23,7 @@ case class ResourceBundleProvider(
   resourceBundles: Map[Locale, ResourceBundle]
 ) extends ResourceProvider {
   override def getString(locale: Locale, key: String): Task[String] = for {
-    resourceBundle <- ZIO.getOrFailWith(new NoSuchElementException(s"No locale loaded for $locale"))(resourceBundles.get(locale))
+    resourceBundle <- ZIO.getOrFailWith(new NoSuchElementException(s"No locale loaded for $locale"))(resourceBundles.get(locale).orElse(resourceBundles.get(Locale.ROOT)))
     string <- ZIO.attempt(resourceBundle.getString(key))
   } yield string
 }

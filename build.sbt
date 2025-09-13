@@ -28,7 +28,7 @@ lazy val zioConfigDependencies = Seq(
 
 lazy val zioDBDependencies = Seq(
   "org.postgresql" % "postgresql" % "42.7.7",
-  "com.zaxxer" % "HikariCP" % "7.0.1",
+  "com.zaxxer" % "HikariCP" % "7.0.2",
   "com.typesafe.slick" %% "slick" % "3.6.1",
   "com.typesafe.slick" %% "slick-hikaricp" % "3.6.1",
   "com.github.tminglei" %% "slick-pg" % "0.23.1"
@@ -39,8 +39,8 @@ lazy val zioCacheDependencies = Seq(
 )
 
 lazy val root = (project in file("."))
-  .aggregate(zioSlick, zioTwitch)
-  .dependsOn(zioSlick, zioTwitch)
+  .aggregate(zioLocalize, zioSlick, zioTwitch)
+  .dependsOn(zioLocalize, zioSlick, zioTwitch)
   .settings(
     name := "AiInTheiPaw",
     idePackagePrefix := Some("io.sommers.aiintheipaw"),

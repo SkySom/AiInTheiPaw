@@ -41,7 +41,7 @@ case class ChannelLogicLive(
       Problem.applyZIO(_),
       {
         case Some(channelEntity) => ZIO.succeed(channelEntity.toChannel)
-        case _ => ZIO.fail(NotFoundProblem(s"Failed to find Channel for $id"))
+        case _ => ZIO.fail(NotFoundProblem("channel", s"Failed to find Channel for $id"))
       }
     )
 }
@@ -58,9 +58,9 @@ case class ChannelLogicCachedLive(
 }
 
 object ChannelLogic {
-  def live: URLayer[ChannelService, ChannelLogic] = ZLayer.fromFunction(ChannelLogicLive(_))
+  val live: URLayer[ChannelService, ChannelLogic] = ZLayer.fromFunction(ChannelLogicLive(_))
 
-  def cachedLive: ZLayer[ChannelService, Nothing, ChannelLogicCachedLive] = live >>> ZLayer.fromZIO(
+  val cachedLive: ZLayer[ChannelService, Nothing, ChannelLogicCachedLive] = live >>> ZLayer.fromZIO(
     {
       for {
         channelLogic <- ZIO.service[ChannelLogic]

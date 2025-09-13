@@ -9,6 +9,9 @@ import io.sommers.aiintheipaw.model.problem.Problem
 import zio.{IO, URLayer, ZLayer}
 
 trait MessageLogic {
+  def sendMessage(channel: Channel, message: String): IO[Problem, Message] =
+    sendMessage(channel, None, message)
+  
   def sendMessage(channel: Channel, replyToId: Option[String], message: String): IO[Problem, Message]
   
   def replyToMessage(receivedMessage: ReceivedMessage, message: String): IO[Problem, Message] =

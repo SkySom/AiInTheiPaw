@@ -8,8 +8,9 @@ import zio.ZIO
 case class ThrowableProblem(
   throwable: Throwable
 ) extends Problem {
-
   override val problemType: ProblemType = ServerProblem
+
+  override def message: String = throwable.getMessage
 }
 
 object ThrowableProblem {
