@@ -10,7 +10,7 @@ trait AiClient {
 }
 
 object AiClient {
-  def liveWeb: ZLayer[Client & Server, Nothing, AiClientWeb] = ZLayer.fromFunction(AiClientWeb.apply)
+  val liveWeb: ZLayer[Client & Server, Nothing, AiClientWeb] = ZLayer.fromFunction(AiClientWeb.apply)
 }
 
 case class AiClientWeb(

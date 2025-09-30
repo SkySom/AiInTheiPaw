@@ -34,7 +34,7 @@ case class SprintEventHandler(
 }
 
 object SprintEventHandler {
-  def live: ZLayer[SprintLogic & MessageLogic & Localizer, Nothing, SprintEventHandler] = ZLayer.fromFunction(SprintEventHandler.apply)
+  val live: ZLayer[SprintLogic & MessageLogic & Localizer, Nothing, SprintEventHandler] = ZLayer.fromFunction(SprintEventHandler.apply)
 }
 
 case class SprintSectionProgress(

@@ -12,7 +12,7 @@ trait EventRouter {
 }
 
 object EventRouter {
-  def live: URLayer[List[EventHandler], EventRouterLive] = ZLayer.fromFunction(EventRouterLive(_))
+  val live: URLayer[List[EventHandler], EventRouterLive] = ZLayer.fromFunction(EventRouterLive(_))
 }
 
 case class EventRouterLive(eventHandlers: List[EventHandler]) extends EventRouter {

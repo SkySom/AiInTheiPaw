@@ -17,7 +17,7 @@ trait UserLogic {
 }
 
 object UserLogic {
-  def live: URLayer[UserService, UserLogic] = ZLayer.fromFunction(UserLogicLive(_))
+  val live: URLayer[UserService, UserLogic] = ZLayer.fromFunction(UserLogicLive(_))
 
   def cachedLive: URLayer[UserService, UserLogic] = live >>> ZLayer.fromZIO(
     {

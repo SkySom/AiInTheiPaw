@@ -35,5 +35,5 @@ case class EventRouterRoutes(
 }
 
 object EventRouterRoutes {
-  def live: URLayer[EventScheduler & EventRouter, EventRouterRoutes] = ZLayer.fromFunction(EventRouterRoutes.apply)
+  val live: URLayer[EventScheduler & EventRouter, EventRouterRoutes] = ZLayer.fromFunction(EventRouterRoutes.apply)
 }
