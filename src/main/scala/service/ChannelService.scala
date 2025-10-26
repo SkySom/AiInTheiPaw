@@ -1,11 +1,11 @@
 package io.sommers.aiintheipaw
 package service
 
+import database.AiPostgresProfile.api.*
 import model.channel.Channel
 import model.service.Service
 
 import io.sommers.zio.slick.DatabaseZIO
-import database.AiPostgresProfile.api.*
 import slick.lifted.Tag
 import zio.{Task, URLayer, ZLayer}
 
@@ -15,20 +15,23 @@ case class ChannelEntity(
   id: Long,
   channelId: String,
   service: Service,
-  guildId: Option[String]
+  guildId: Option[String],
+  name: String
 ) {
   def toChannel: Channel = Channel(
     id,
     channelId,
     service,
-    guildId
+    guildId,
+    name
   )
 }
 
 case class ChannelCreate(
   channelId: String,
   service: Service,
-  guildId: Option[String]
+  guildId: Option[String],
+  name: String
 )
 
 class ChannelTable(tag: Tag) extends Table[ChannelEntity](tag, "channel") {
@@ -40,11 +43,13 @@ class ChannelTable(tag: Tag) extends Table[ChannelEntity](tag, "channel") {
 
   def guildId = column[String]("guild_id")
 
+  def name = column[String]("name")
+
   def * = (id, channelId, service, guildId.?)
     .mapTo[ChannelEntity]
 }
 
-private val channelQuery = TableQuery[ChannelTable]
+val channelQuery = TableQuery[ChannelTable]
 
 trait ChannelService {
   def getChannel(id: Long): Task[Option[ChannelEntity]]
@@ -68,8 +73,13 @@ case class ChannelServiceLive(
 
   override def createChannel(channelCreate: ChannelCreate): Task[ChannelEntity] = {
     databaseZIO.run {
-      (channelQuery returning channelQuery) +=
-        ChannelEntity(0, channelCreate.channelId, channelCreate.service, channelCreate.guildId)
+      (channelQuery returning channelQuery) += ChannelEntity(
+        0,
+        channelCreate.channelId,
+        channelCreate.service,
+        channelCreate.guildId,
+        channelCreate.name
+      )
     }
   }
 
