@@ -1,11 +1,11 @@
 package io.sommers.aiintheipaw
 package twitch
 
+import command.CommandManager
 import logic.{ChannelLogic, UserLogic}
-import model.problem.Problem
+import model.problem.{Problem, ProblemException}
 import model.service.Service.Twitch
 
-import io.sommers.aiintheipaw.command.CommandManager
 import io.sommers.zio.twitch.model.webhook.Subscription
 import io.sommers.zio.twitch.model.webhook.event.ChannelChatMessage
 import io.sommers.zio.twitch.server.TwitchNotificationHandler
@@ -17,16 +17,15 @@ case class TwitchNotificationHandlerImpl(
   commandManager: CommandManager
 ) extends TwitchNotificationHandler {
 
-  override def handleNotification[TE](subscription: Subscription, event: TE): IO[Throwable, Unit] = (for {
-    _ <- ZIO.whenCase(event) {
+  override def handleNotification[TE](subscription: Subscription, event: TE): IO[Throwable, Unit] =
+    ZIO.whenCase[Any, Problem, TE, Unit](event) {
       case channelChatMessage: ChannelChatMessage => for {
-        channel <- channelLogic.findChannelForService(Twitch, channelChatMessage.broadcasterUserId)
+        channel <- channelLogic.findChannelForService(Twitch, channelChatMessage.broadcasterUserId, None, channelChatMessage.chatterUserName)
         user <- userLogic.findUserForService(Twitch, channelChatMessage.chatterUserId, channelChatMessage.broadcasterUserName)
         _ <- ZIO.log(s"Channel: $channel, User: $user")
         _ <- handleChatMessage(channelChatMessage)
       } yield ()
-    }
-  } yield ()).foldZIO(error => ZIO.log(s"Found Problem: ${error.toString}"), _ => ZIO.succeed(()))
+    }.mapBoth[Throwable, Unit](ProblemException(_), _ => ())
 
   private def handleChatMessage(channelChatMessage: ChannelChatMessage): IO[Problem, Unit] = {
     ZIO.log(channelChatMessage.message.text)
