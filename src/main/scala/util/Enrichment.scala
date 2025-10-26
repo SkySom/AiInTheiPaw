@@ -63,6 +63,12 @@ object Enrichment {
         ZIO.succeed(_)
       }
     }
+
+    def forEachZIO[ERR, OUT2](f: OUT => IO[ERR, OUT2]): IO[ERR, Unit] = {
+      option.fold[IO[ERR, Unit]](ZIO.succeed(())) {
+        f(_).map(_ => ())
+      }
+    }
   }
 
   implicit class EnrichBoolean(boolean: Boolean) {

@@ -13,11 +13,13 @@ object TestChannelGenerator {
     id <- ZIO.randomWith(_.nextLong)
     channelId <- ZIO.randomWith(_.nextString(8))
     guildId <- ZIO.when(includeGuildId)(ZIO.randomWith(_.nextString(8)))
-  } yield MockChannel(id, channelId, guildId)
+    displayName <- ZIO.randomWith(_.nextString(10))
+  } yield MockChannel(id, channelId, guildId, displayName)
 
   def generateAndInsertChannel(includeGuildId: Boolean = false): ZIO[ChannelLogic, Problem, Channel] = for {
     channelId <- ZIO.randomWith(_.nextString(8))
     guildId <- ZIO.when(includeGuildId)(ZIO.randomWith(_.nextString(8)))
-    mockChannel <- ZIO.serviceWithZIO[ChannelLogic](_.findChannelForService(Service.Test, channelId, guildId))
+    displayName <- ZIO.randomWith(_.nextString(10))
+    mockChannel <- ZIO.serviceWithZIO[ChannelLogic](_.findChannelForService(Service.Test, channelId, guildId, displayName))
   } yield mockChannel
 }

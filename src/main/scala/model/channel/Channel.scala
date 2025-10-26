@@ -11,20 +11,24 @@ trait Channel {
   val guildId: Option[String]
 
   val channelId: String
+  
+  val displayName: String
 }
 
 case class ChannelImpl(
   override val id: Long,
   override val channelId: String,
   override val service: Service,
-  override val guildId: Option[String]
+  override val guildId: Option[String],
+  override val displayName: String
 ) extends Channel
 
 object Channel {
-  def apply(id: Long, channelId: String, service: Service, guildId: Option[String]): Channel = ChannelImpl(
+  def apply(id: Long, channelId: String, service: Service, guildId: Option[String], displayName: String): Channel = ChannelImpl(
     id,
     channelId,
     service,
-    guildId
+    guildId,
+    displayName
   )
 }

@@ -29,13 +29,19 @@ class ChannelServiceMock extends ChannelService {
       id,
       channelCreate.channelId,
       channelCreate.service,
-      channelCreate.guildId
+      channelCreate.guildId,
+      channelCreate.displayName
     )
     channels.put(id, channel)
     ZIO.succeed(channel)
   }
+
+  override def updateChannel(channelEntity: ChannelEntity): Task[Int] = {
+    channels.put(channelEntity.id, channelEntity)
+    ZIO.succeed(1)
+  }
 }
 
 object ChannelServiceMock {
-  def mock: ULayer[ChannelService] = ZLayer.succeed(new ChannelServiceMock)
+  val mock: ULayer[ChannelService] = ZLayer.succeed(new ChannelServiceMock)
 }

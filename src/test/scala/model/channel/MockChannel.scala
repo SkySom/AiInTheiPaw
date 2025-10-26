@@ -8,7 +8,8 @@ import io.sommers.aiintheipaw.model.service.Service.Test
 case class MockChannel(
   override val id: Long,
   override val channelId: String,
-  override val guildId: Option[String]
+  override val guildId: Option[String],
+  override val displayName: String
 ) extends Channel {
   override val service: Service = Test
 }

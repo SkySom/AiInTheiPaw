@@ -31,7 +31,7 @@ case class ChannelCreate(
   channelId: String,
   service: Service,
   guildId: Option[String],
-  name: String
+  displayName: String
 )
 
 class ChannelTable(tag: Tag) extends Table[ChannelEntity](tag, "channel") {
@@ -43,9 +43,9 @@ class ChannelTable(tag: Tag) extends Table[ChannelEntity](tag, "channel") {
 
   def guildId = column[String]("guild_id")
 
-  def name = column[String]("name")
+  def displayName = column[String]("display_name")
 
-  def * = (id, channelId, service, guildId.?)
+  def * = (id, channelId, service, guildId.?, displayName)
     .mapTo[ChannelEntity]
 }
 
@@ -57,6 +57,8 @@ trait ChannelService {
   def getChannel(service: Service, channelId: String, guildId: Option[String]): Task[Option[ChannelEntity]]
 
   def createChannel(channelCreate: ChannelCreate): Task[ChannelEntity]
+  
+  def updateChannel(channelEntity: ChannelEntity): Task[Int]
 }
 
 case class ChannelServiceLive(
@@ -78,7 +80,7 @@ case class ChannelServiceLive(
         channelCreate.channelId,
         channelCreate.service,
         channelCreate.guildId,
-        channelCreate.name
+        channelCreate.displayName
       )
     }
   }
@@ -91,6 +93,10 @@ case class ChannelServiceLive(
       .result
       .headOption
     )
+  }
+
+  override def updateChannel(channelEntity: ChannelEntity): Task[Int] = {
+    databaseZIO.run(channelQuery.update(channelEntity))
   }
 }
 

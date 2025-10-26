@@ -7,31 +7,32 @@ import model.service.Service
 import service.{ChannelCreate, ChannelService}
 import util.CacheHelper
 
+import io.sommers.aiintheipaw.util.Enrichment.EnrichOption
 import zio.cache.{Cache, Lookup}
 import zio.{IO, URLayer, ZIO, ZLayer}
 
 trait ChannelLogic {
   def getChannel(id: Long): IO[Problem, Channel]
 
-  def findChannelForService(service: Service, channelId: String, guildId: Option[String] = None): IO[Problem, Channel]
+  def findChannelForService(service: Service, channelId: String, guildId: Option[String] = None, displayName: String): IO[Problem, Channel]
 }
 
 case class ChannelLogicLive(
   channelService: ChannelService,
 ) extends ChannelLogic {
 
-  override def findChannelForService(service: Service, channelId: String, guildId: Option[String]): IO[Problem, Channel] = {
-    channelService.getChannel(service, channelId, guildId)
-      .foldZIO(
-        Problem.applyZIO,
-        _.fold(createChannel(service, channelId, guildId)) {
-          channelEntity => ZIO.succeed(channelEntity.toChannel)
-        }
-      )
-  }
+  override def findChannelForService(service: Service, channelId: String, guildId: Option[String], displayName: String): IO[Problem, Channel] = {
+    for {
+      existingChannel <- channelService.getChannel(service, channelId, guildId)
+      _ <- existingChannel.filter(_.name != displayName)
+        .forEachZIO(channelService.updateChannel)
+      channel <- existingChannel.map(_.toChannel)
+        .orElseZIO(createChannel(service, channelId, guildId, displayName))
+    } yield channel
+  }.mapError(Problem(_))
 
-  private def createChannel(service: Service, channelId: String, guildId: Option[String]): IO[Problem, Channel] = {
-    channelService.createChannel(ChannelCreate(channelId, service, guildId))
+  private def createChannel(service: Service, channelId: String, guildId: Option[String], displayName: String): IO[Problem, Channel] = {
+    channelService.createChannel(ChannelCreate(channelId, service, guildId, displayName))
       .map(_.toChannel)
       .mapError(Problem(_))
   }
@@ -48,13 +49,13 @@ case class ChannelLogicLive(
 
 case class ChannelLogicCachedLive(
   cacheById: Cache[Long, Problem, Channel],
-  cacheByChannel: Cache[(Service, String, Option[String]), Problem, Channel]
+  cacheByChannel: Cache[(Service, String, Option[String], String), Problem, Channel]
 ) extends ChannelLogic {
 
   override def getChannel(id: Long): IO[Problem, Channel] = cacheById.get(id)
 
-  override def findChannelForService(service: Service, channelId: String, guildId: Option[String]): IO[Problem, Channel] =
-    cacheByChannel.get(service, channelId, guildId)
+  override def findChannelForService(service: Service, channelId: String, guildId: Option[String], displayName: String): IO[Problem, Channel] =
+    cacheByChannel.get(service, channelId, guildId, displayName)
 }
 
 object ChannelLogic {
@@ -70,9 +71,9 @@ object ChannelLogic {
         ) {
           CacheHelper.handleTTL(_)
         }
-        cacheByChannelInfo <- Cache.makeWith[(Service, String, Option[String]), Any, Problem, Channel](
+        cacheByChannelInfo <- Cache.makeWith[(Service, String, Option[String], String), Any, Problem, Channel](
           capacity = Int.MaxValue,
-          lookup = Lookup(key => channelLogic.findChannelForService(key._1, key._2, key._3))
+          lookup = Lookup(key => channelLogic.findChannelForService(key._1, key._2, key._3, key._4))
         ) {
           CacheHelper.handleTTL(_)
         }
