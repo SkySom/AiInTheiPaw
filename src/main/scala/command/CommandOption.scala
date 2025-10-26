@@ -7,6 +7,7 @@ import zio.{Duration, IO, Task, Trace, ZIO}
 
 import java.util.concurrent.TimeUnit
 import scala.util.Try
+import scala.util.matching.Regex
 
 
 trait CommandOption[T] {
@@ -43,7 +44,7 @@ case class DurationCommandOption(
   description: String,
   required: Boolean = false
 ) extends CommandOption[Duration] {
-  val numberPattern = "^(-?\\d*.?\\d*)$".r
+  val numberPattern: Regex = "^(-?\\d*.?\\d*)$".r
 
 
   override def parseOption(input: String)(implicit trace: Trace): IO[Problem, Duration] = {

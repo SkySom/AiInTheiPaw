@@ -2,10 +2,10 @@ package io.sommers.aiintheipaw
 package command.sprint
 
 import command.{Command, CommandGroup}
-import logic.SprintLogic
+import event.EventScheduler
 import logic.message.MessageLogic
+import logic.{SprintCommandLogic, SprintLogic}
 
-import io.sommers.aiintheipaw.event.EventScheduler
 import zio.{URLayer, ZLayer}
 
 case class SprintCommandGroup(
@@ -22,5 +22,5 @@ object SprintCommandGroup {
   //noinspection ScalaWeakerAccess
   def layer: URLayer[StartSprintCommand, SprintCommandGroup] = ZLayer.fromFunction(SprintCommandGroup(_))
 
-  def fullLayer: URLayer[SprintLogic & MessageLogic & EventScheduler, SprintCommandGroup] = StartSprintCommand.live >>> layer
+  def fullLayer: URLayer[SprintCommandLogic & MessageLogic & EventScheduler, SprintCommandGroup] = StartSprintCommand.live >>> layer
 }

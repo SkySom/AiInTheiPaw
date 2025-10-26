@@ -11,13 +11,13 @@ import model.user.User
 import service.{SprintEntity, SprintEntryEntity, SprintSectionEntity, SprintService}
 import util.Enrichment.{EnrichBoolean, EnrichOption, EnrichZIOOption}
 
-import zio.{Duration, IO, URLayer, ZIO, ZLayer, durationInt}
+import zio.{Duration, IO, Layer, URLayer, ZIO, ZLayer, durationInt}
 
 import scala.language.implicitConversions
 
 
 trait SprintLogic {
-  def createSprint(channel: Channel, user: User, duration: Duration): ZIO[EventScheduler, Problem, Sprint]
+  def createSprint(channel: Channel, user: User, signUpDuration: Duration, inProgressDuration: Duration): ZIO[EventScheduler, Problem, Sprint]
 
   def getActiveSprintByChannel(channel: Channel): IO[Problem, Option[Sprint]]
 
@@ -37,13 +37,13 @@ case class SprintLogicLive(
   userLogic: UserLogic,
   channelLogic: ChannelLogic
 ) extends SprintLogic {
-  override def createSprint(channel: Channel, user: User, sprintDuration: Duration): ZIO[EventScheduler, Problem, Sprint] = {
+  override def createSprint(channel: Channel, user: User, signUpDuration: Duration, sprintDuration: Duration): ZIO[EventScheduler, Problem, Sprint] = {
     for {
       activeSprint <- getActiveSprintByChannel(channel)
       _ <- ZIO.when(activeSprint.isDefined)(ZIO.fail(InvalidValueProblem("There is already an active sprint")))
       newSprint <- sprintService.createSprint(channel.id, user.id, sprintDuration)
       startTime <- ZIO.clockWith(_.instant)
-      signUpSection <- sprintService.createSprintSection(newSprint.id, SignUp, 1.minute, startTime)
+      signUpSection <- sprintService.createSprintSection(newSprint.id, SignUp, signUpDuration, startTime)
       _ <- ZIO.serviceWithZIO[EventScheduler](_.schedule(1.minute, "sprint", SprintSectionProgress(newSprint.id, signUpSection.id, SprintStatus.InProgress)))
     } yield Sprint(
       newSprint.id,
@@ -131,7 +131,3 @@ case class SprintLogicLive(
     entries
   )
 }
-
-case class SprintConfig(
-  
-)

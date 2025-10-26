@@ -2,22 +2,20 @@ package io.sommers.aiintheipaw
 package eventhandler
 
 import event.{EventHandler, EventScheduler}
-import logic.SprintLogic
 import logic.message.MessageLogic
+import logic.{SprintCommandLogic, SprintLogic}
 import model.problem.{JsonParseProblem, Problem}
 import model.sprint.SprintStatus
 
 import io.sommers.zio.localize.Localizer
 import zio.json.ast.Json
 import zio.json.{JsonDecoder, JsonEncoder}
-import zio.{ZIO, ZLayer}
+import zio.{URLayer, ZIO, ZLayer}
 
 import java.util.Locale
 
 case class SprintEventHandler(
-  sprintLogic: SprintLogic,
-  messageLogic: MessageLogic,
-  localizer: Localizer
+  sprintCommandLogic: SprintCommandLogic,
 ) extends EventHandler {
 
   override def name: String = "sprint"
@@ -25,16 +23,12 @@ case class SprintEventHandler(
   override def handleEvent(json: Json): ZIO[EventScheduler, Problem, Unit] = for {
     event <- ZIO.fromEither(json.as[SprintSectionProgress])
       .mapError(JsonParseProblem(_))
-    sprint <- sprintLogic.getSprintById(event.sprintId)
-    nextSection <- sprintLogic.progressSprint(event.currentSectionId, event.nextSectionStatus)
-    message <- localizer.localize(Locale.US, s"sprint.section.${nextSection.status}")
-      .mapError(Problem(_))
-    _ <- messageLogic.sendMessage(sprint.channel, message)
+    _ <- sprintCommandLogic.progressSprint(event.sprintId, event.currentSectionId, event.nextSectionStatus)
   } yield ()
 }
 
 object SprintEventHandler {
-  val live: ZLayer[SprintLogic & MessageLogic & Localizer, Nothing, SprintEventHandler] = ZLayer.fromFunction(SprintEventHandler.apply)
+  val live: URLayer[SprintCommandLogic, SprintEventHandler] = ZLayer.fromFunction(SprintEventHandler.apply)
 }
 
 case class SprintSectionProgress(

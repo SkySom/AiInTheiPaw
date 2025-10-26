@@ -3,10 +3,10 @@ package util
 
 import model.problem.{Problem, ProblemResponse}
 
+import zio.http.*
 import zio.http.Header.Accept.MediaTypeWithQFactor
 import zio.http.codec.{CodecConfig, ContentCodec, StatusCodec}
 import zio.http.endpoint.{AuthType, Endpoint}
-import zio.http.{Handler, Header, MediaType, Request, Response, Route, Status}
 import zio.{Chunk, IO, Task, Trace, ZIO}
 
 object Enrichment {
@@ -36,17 +36,35 @@ object Enrichment {
       .getAll(Header.Accept)
       .flatMap(_.mimeTypes) :+ MediaTypeWithQFactor(MediaType.application.`json`, Some(0.0))
   }
-  
+
   implicit class EnrichZIOOption[IN, ERR, OUT](zio: ZIO[IN, ERR, Option[OUT]]) {
     def getOrFail(fail: => ERR): ZIO[IN, ERR, OUT] = zio.flatMap(opt => opt.getOrZIOFail(fail))
   }
-  
+
   implicit class EnrichOption[OUT](option: Option[OUT]) {
     def getOrZIOFail[ERR](fail: => ERR)(implicit trace: Trace): IO[ERR, OUT] = option.fold(ZIO.fail(fail)) {
       ZIO.succeed(_)
     }
+
+    def foldZIO[ERR, OUT2](ifEmpty: => IO[ERR, OUT2])(f: OUT => IO[ERR, OUT2])(implicit trace: Trace): IO[ERR, OUT2] = {
+      option.fold(ifEmpty) {
+        f(_)
+      }
+    }
+    
+    def mapZIO[ERR, OUT2](f: OUT => IO[ERR, OUT2])(implicit trace: Trace): IO[ERR, Option[OUT2]] = {
+      foldZIO[ERR, Option[OUT2]](ZIO.succeed(None)) {
+        f(_).map(Some(_))
+      }
+    }
+    
+    def orElseZIO[ERR](f: => IO[ERR, OUT]): IO[ERR, OUT] = {
+      option.fold(f) {
+        ZIO.succeed(_)
+      }
+    }
   }
-  
+
   implicit class EnrichBoolean(boolean: Boolean) {
     def toZIO[ERR](fail: => ERR): IO[ERR, Unit] = if (boolean) {
       ZIO.succeed(())

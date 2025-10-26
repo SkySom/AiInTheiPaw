@@ -3,7 +3,7 @@ package command.sprint
 
 import command.{Command, CommandOption, DurationCommandOption}
 import event.EventScheduler
-import logic.SprintLogic
+import logic.{SprintCommandLogic, SprintLogic}
 import logic.message.MessageLogic
 import model.message.ReceivedMessage
 import model.problem.Problem
@@ -13,7 +13,7 @@ import zio.{Duration, IO, URLayer, ZEnvironment, ZLayer}
 import java.util.concurrent.TimeUnit
 
 case class StartSprintCommand(
-  sprintLogic: SprintLogic,
+  sprintCommandLogic: SprintCommandLogic,
   messageLogic: MessageLogic,
   eventScheduler: EventScheduler
 ) extends Command {
@@ -29,13 +29,12 @@ case class StartSprintCommand(
   override def run(message: ReceivedMessage, args: Map[String, AnyVal]): IO[Problem, Unit] = {
     for {
       duration <- durationCommandOption.find(args)
-      sprint <- sprintLogic.createSprint(message.channel, message.user, duration.getOrElse(Duration(1, TimeUnit.MINUTES)))
+      _ <- sprintCommandLogic.createSprint(message.channel, message.user, Some(message.messageId), duration)
         .provideEnvironment(ZEnvironment(eventScheduler))
-      _ <- messageLogic.sendMessage(message.channel, Some(message.messageId), "Sprint has entered Sign Up")
     } yield ()
   }.mapError(Problem(_))
 }
 
 object StartSprintCommand {
-  val live: URLayer[SprintLogic & MessageLogic & EventScheduler, StartSprintCommand] = ZLayer.fromFunction(StartSprintCommand.apply)
+  val live: URLayer[SprintCommandLogic & MessageLogic & EventScheduler, StartSprintCommand] = ZLayer.fromFunction(StartSprintCommand.apply)
 }

@@ -1,9 +1,10 @@
 package io.sommers.aiintheipaw
 package model.sprint
 
-import io.sommers.aiintheipaw.model.problem.{InvalidStateProblem, Problem}
-import zio.{IO, ZIO}
+import model.problem.{InvalidStateProblem, Problem}
+
 import zio.json.{JsonDecoder, JsonEncoder}
+import zio.{Duration, IO, ZIO}
 
 enum SprintStatus(val name: String, val allowSignUp: Boolean, val allowCounts: Boolean, val active: Boolean)
   derives JsonEncoder, JsonDecoder {
@@ -21,6 +22,15 @@ enum SprintStatus(val name: String, val allowSignUp: Boolean, val allowCounts: B
       case InProgress => ZIO.succeed(AwaitingCounts)
       case AwaitingCounts => ZIO.succeed(Complete)
       case _ => ZIO.fail(InvalidStateProblem(s"No next status for ${this.name}"))
+    }
+  }
+  
+  def getDuration(signUp: Duration, inProgress: Duration, awaitingCounts: Duration): IO[Problem, Duration] = {
+    this match {
+      case SignUp => ZIO.succeed(signUp)
+      case InProgress => ZIO.succeed(inProgress)
+      case AwaitingCounts => ZIO.succeed(awaitingCounts)
+      case _ => ZIO.fail(InvalidStateProblem(s"No duration for ${this.name}"))
     }
   }
 }
