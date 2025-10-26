@@ -20,8 +20,8 @@ case class TwitchNotificationHandlerImpl(
   override def handleNotification[TE](subscription: Subscription, event: TE): IO[Throwable, Unit] =
     ZIO.whenCase[Any, Problem, TE, Unit](event) {
       case channelChatMessage: ChannelChatMessage => for {
-        channel <- channelLogic.findChannelForService(Twitch, channelChatMessage.broadcasterUserId, None, channelChatMessage.chatterUserName)
-        user <- userLogic.findUserForService(Twitch, channelChatMessage.chatterUserId, channelChatMessage.broadcasterUserName)
+        channel <- channelLogic.findChannelForService(Twitch, channelChatMessage.broadcasterUserId, None, channelChatMessage.broadcasterUserName)
+        user <- userLogic.findUserForService(Twitch, channelChatMessage.chatterUserId, channelChatMessage.chatterUserName)
         _ <- ZIO.log(s"Channel: $channel, User: $user")
         _ <- handleChatMessage(channelChatMessage)
       } yield ()
