@@ -6,7 +6,7 @@ import eventhandler.SprintEventHandler
 import generator.{TestChannelGenerator, TestUserGenerator}
 import logic.SprintLogicSpec.test
 import mock.MessageLogicMock
-import mock.service.{ChannelServiceMock, SprintServiceMock, UserServiceMock}
+import mock.service.{ChannelServiceMock, ChannelSettingServiceMock, SprintServiceMock, UserServiceMock}
 import model.problem.{InvalidValueProblem, Problem}
 import model.sprint.SprintStatus.{InProgress, SignUp}
 import route.AiTestClient
@@ -22,22 +22,22 @@ object SprintLogicSpec extends ZIOSpecDefault {
       for {
         user <- TestUserGenerator.generateAndInsertUser()
         channel <- TestChannelGenerator.generateAndInsertChannel()
-        sprint <- ZIO.serviceWithZIO[SprintLogic](_.createSprint(channel, user, 1.minute))
+        sprint <- ZIO.serviceWithZIO[SprintLogic](_.createSprint(channel, user, 1.minute, 1.minute))
       } yield assertTrue(sprint.sections.is(_.custom(AiCustomAssertions.seqHead)).status == SignUp)
     },
     test("createSprint() should fail to create a Sprint if one is active") {
       for {
         user <- TestUserGenerator.generateAndInsertUser()
         channel <- TestChannelGenerator.generateAndInsertChannel()
-        sprint1 <- ZIO.serviceWithZIO[SprintLogic](_.createSprint(channel, user, 1.minute))
-        sprint2 <- ZIO.serviceWithZIO[SprintLogic](_.createSprint(channel, user, 1.minute)).exit
+        sprint1 <- ZIO.serviceWithZIO[SprintLogic](_.createSprint(channel, user, 1.minute, 1.minute))
+        sprint2 <- ZIO.serviceWithZIO[SprintLogic](_.createSprint(channel, user, 1.minute, 1.minute)).exit
       } yield assertTrue(sprint2.is(_.failure) == InvalidValueProblem("There is already an active sprint"))
     },
     test("joinSprint() should succeed if sprint in status that allows sign up") {
       for {
         user <- TestUserGenerator.generateAndInsertUser()
         channel <- TestChannelGenerator.generateAndInsertChannel()
-        sprint <- ZIO.serviceWithZIO[SprintLogic](_.createSprint(channel, user, 1.minute))
+        sprint <- ZIO.serviceWithZIO[SprintLogic](_.createSprint(channel, user, 1.minute, 1.minute))
         entry <- ZIO.serviceWithZIO[SprintLogic](_.joinSprint(channel, user, 125))
       } yield assertTrue(entry.startingWords == 125)
     },
@@ -45,7 +45,7 @@ object SprintLogicSpec extends ZIOSpecDefault {
       for {
         user <- TestUserGenerator.generateAndInsertUser()
         channel <- TestChannelGenerator.generateAndInsertChannel()
-        sprint <- ZIO.serviceWithZIO[SprintLogic](_.createSprint(channel, user, 1.minute))
+        sprint <- ZIO.serviceWithZIO[SprintLogic](_.createSprint(channel, user, 1.minute, 1.minute))
         entry <- ZIO.serviceWithZIO[SprintLogic](_.joinSprint(channel, user, 125))
         _ <- TestClock.adjust(1.minute)
         inProgressSprint <- ZIO.serviceWithZIO[SprintLogic](_.getSprintById(sprint.id))
@@ -65,6 +65,10 @@ object SprintLogicSpec extends ZIOSpecDefault {
       )
     ),
     MessageLogicMock.mock,
-    ResourceProvider.resourceBundleProvider("localization/localization") >>> Localizer.live
+    ResourceProvider.resourceBundleProvider("localization/localization") >>> Localizer.live,
+    SprintCommandLogic.live,
+    ChannelSettingLogic.live,
+    ZLayer.succeed(SprintConfig(1.minute, 1.minute, 1.minute, 1.minute)),
+    ChannelSettingServiceMock.mock
   )
 }
