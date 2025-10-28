@@ -3,9 +3,9 @@ package io.sommers.aiintheipaw
 import command.CommandManager
 import http.WebServer
 import logic.message.{MessageLogic, TwitchServiceMessageLogic}
-import logic.{ChannelLogic, ChannelSettingLogic, SprintCommandLogic, SprintCommandLogicLive, SprintConfig, SprintLogic, UserLogic}
+import logic.{ChannelLogic, ChannelSettingLogic, GuildLogic, SprintCommandLogic, SprintCommandLogicLive, SprintConfig, SprintLogic, UserLogic}
 import route.{AiClient, EventRouterRoutes, MessageRoutes}
-import service.{ChannelServiceLive, ChannelSettingService, SprintService, UserServiceLive}
+import service.{ChannelServiceLive, ChannelSettingService, GuildService, SprintService, UserServiceLive}
 import twitch.TwitchNotificationHandlerImpl
 
 import io.sommers.aiintheipaw.command.sprint.SprintCommandGroup
@@ -58,7 +58,9 @@ object AiInTheiPaw extends ZIOAppDefault {
       SprintConfig.live,
       SprintCommandLogic.live,
       ChannelSettingLogic.cachedLive,
-      ChannelSettingService.live
+      ChannelSettingService.live,
+      GuildLogic.live,
+      GuildService.live
     )
   }
   

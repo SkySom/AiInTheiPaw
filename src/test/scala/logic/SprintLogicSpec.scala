@@ -3,10 +3,10 @@ package logic
 
 import event.EventRouter
 import eventhandler.SprintEventHandler
-import generator.{TestChannelGenerator, TestUserGenerator}
+import generator.{TestChannelGenerator, TestGuildGenerator, TestUserGenerator}
 import logic.SprintLogicSpec.test
 import mock.MessageLogicMock
-import mock.service.{ChannelServiceMock, ChannelSettingServiceMock, SprintServiceMock, UserServiceMock}
+import mock.service.{ChannelServiceMock, ChannelSettingServiceMock, GuildServiceMock, SprintServiceMock, UserServiceMock}
 import model.problem.{InvalidValueProblem, Problem}
 import model.sprint.SprintStatus.{InProgress, SignUp}
 import route.AiTestClient
@@ -44,6 +44,7 @@ object SprintLogicSpec extends ZIOSpecDefault {
     test("sprint should be in progress after 1 minute") {
       for {
         user <- TestUserGenerator.generateAndInsertUser()
+        guild <- TestGuildGenerator.generateAndInsertGuild()
         channel <- TestChannelGenerator.generateAndInsertChannel()
         sprint <- ZIO.serviceWithZIO[SprintLogic](_.createSprint(channel, user, 1.minute, 1.minute))
         entry <- ZIO.serviceWithZIO[SprintLogic](_.joinSprint(channel, user, 125))
@@ -69,6 +70,8 @@ object SprintLogicSpec extends ZIOSpecDefault {
     SprintCommandLogic.live,
     ChannelSettingLogic.live,
     ZLayer.succeed(SprintConfig(1.minute, 1.minute, 1.minute, 1.minute)),
-    ChannelSettingServiceMock.mock
+    ChannelSettingServiceMock.mock,
+    GuildLogic.live,
+    GuildServiceMock.mock
   )
 }

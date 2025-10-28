@@ -1,6 +1,7 @@
 package io.sommers.aiintheipaw
 package model.channel
 
+import model.guild.Guild
 import model.service.Service
 
 trait Channel {
@@ -8,10 +9,10 @@ trait Channel {
 
   val service: Service
 
-  val guildId: Option[String]
+  val guild: Guild
 
   val channelId: String
-  
+
   val displayName: String
 }
 
@@ -19,16 +20,7 @@ case class ChannelImpl(
   override val id: Long,
   override val channelId: String,
   override val service: Service,
-  override val guildId: Option[String],
+  override val guild: Guild,
   override val displayName: String
 ) extends Channel
 
-object Channel {
-  def apply(id: Long, channelId: String, service: Service, guildId: Option[String], displayName: String): Channel = ChannelImpl(
-    id,
-    channelId,
-    service,
-    guildId,
-    displayName
-  )
-}

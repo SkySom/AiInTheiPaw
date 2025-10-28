@@ -13,7 +13,7 @@ class ChannelServiceMock extends ChannelService {
 
   override def getChannel(id: Long): Task[Option[ChannelEntity]] = ZIO.succeed(channels.get(id))
 
-  override def getChannel(service: Service, channelId: String, guildId: Option[String]): Task[Option[ChannelEntity]] =
+  override def getChannel(service: Service, channelId: String, guildId: Long): Task[Option[ChannelEntity]] =
     ZIO.succeed(
       channels.find(
           channel => channel._2.service == service &&

@@ -2,35 +2,27 @@ package io.sommers.aiintheipaw
 package service
 
 import database.AiPostgresProfile.api.*
-import model.channel.Channel
 import model.service.Service
 
 import io.sommers.zio.slick.DatabaseZIO
-import slick.lifted.Tag
+import slick.lifted.{ForeignKeyQuery, Tag}
 import zio.{Task, URLayer, ZLayer}
 
+import scala.annotation.unused
 import scala.language.implicitConversions
 
 case class ChannelEntity(
   id: Long,
   channelId: String,
   service: Service,
-  guildId: Option[String],
-  name: String
-) {
-  def toChannel: Channel = Channel(
-    id,
-    channelId,
-    service,
-    guildId,
-    name
-  )
-}
+  guildId: Long,
+  displayName: String
+)
 
 case class ChannelCreate(
   channelId: String,
   service: Service,
-  guildId: Option[String],
+  guildId: Long,
   displayName: String
 )
 
@@ -41,11 +33,14 @@ class ChannelTable(tag: Tag) extends Table[ChannelEntity](tag, "channel") {
 
   def service = column[Service]("service")
 
-  def guildId = column[String]("guild_id")
+  def guildId = column[Long]("guild_id")
 
   def displayName = column[String]("display_name")
 
-  def * = (id, channelId, service, guildId.?, displayName)
+  @unused
+  def guildIdForeignKey: ForeignKeyQuery[GuildTable, GuildEntity] = foreignKey("guild_id_fk", guildId, guildQuery)(_.id)
+
+  def * = (id, channelId, service, guildId, displayName)
     .mapTo[ChannelEntity]
 }
 
@@ -54,10 +49,10 @@ val channelQuery = TableQuery[ChannelTable]
 trait ChannelService {
   def getChannel(id: Long): Task[Option[ChannelEntity]]
 
-  def getChannel(service: Service, channelId: String, guildId: Option[String]): Task[Option[ChannelEntity]]
+  def getChannel(service: Service, channelId: String, guildId: Long): Task[Option[ChannelEntity]]
 
   def createChannel(channelCreate: ChannelCreate): Task[ChannelEntity]
-  
+
   def updateChannel(channelEntity: ChannelEntity): Task[Int]
 }
 
@@ -85,10 +80,10 @@ case class ChannelServiceLive(
     }
   }
 
-  override def getChannel(service: Service, channelId: String, guildIdOpt: Option[String]): Task[Option[ChannelEntity]] = {
+  override def getChannel(service: Service, channelId: String, guildId: Long): Task[Option[ChannelEntity]] = {
     databaseZIO.run(channelQuery.filter(_.channelId === channelId)
       .filter(_.service === service)
-      .filter(_.guildId === guildIdOpt)
+      .filter(_.guildId === guildId)
       .take(1)
       .result
       .headOption

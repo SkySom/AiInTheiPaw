@@ -1,39 +1,41 @@
 package io.sommers.aiintheipaw
 package logic
 
-import model.channel.Channel
+import model.channel.{Channel, ChannelImpl}
+import model.guild.Guild
 import model.problem.{NotFoundProblem, Problem}
 import model.service.Service
-import service.{ChannelCreate, ChannelService}
+import service.{ChannelCreate, ChannelEntity, ChannelService}
 import util.CacheHelper
+import util.Enrichment.EnrichOption
 
-import io.sommers.aiintheipaw.util.Enrichment.EnrichOption
 import zio.cache.{Cache, Lookup}
 import zio.{IO, URLayer, ZIO, ZLayer}
 
 trait ChannelLogic {
   def getChannel(id: Long): IO[Problem, Channel]
 
-  def findChannelForService(service: Service, channelId: String, guildId: Option[String] = None, displayName: String): IO[Problem, Channel]
+  def findChannelForService(service: Service, channelId: String, guild: Guild, displayName: String): IO[Problem, Channel]
 }
 
 case class ChannelLogicLive(
   channelService: ChannelService,
+  guildLogic: GuildLogic
 ) extends ChannelLogic {
 
-  override def findChannelForService(service: Service, channelId: String, guildId: Option[String], displayName: String): IO[Problem, Channel] = {
+  override def findChannelForService(service: Service, channelId: String, guild: Guild, displayName: String): IO[Problem, Channel] = {
     for {
-      existingChannel <- channelService.getChannel(service, channelId, guildId)
-      _ <- existingChannel.filter(_.name != displayName)
+      existingChannel <- channelService.getChannel(service, channelId, guild.id)
+      _ <- existingChannel.filter(_.displayName != displayName)
         .forEachZIO(channelService.updateChannel)
-      channel <- existingChannel.map(_.toChannel)
-        .orElseZIO(createChannel(service, channelId, guildId, displayName))
+      channel <- existingChannel.map(createChannel(_, guild))
+        .orElseZIO(createChannel(service, channelId, guild, displayName))
     } yield channel
   }.mapError(Problem(_))
 
-  private def createChannel(service: Service, channelId: String, guildId: Option[String], displayName: String): IO[Problem, Channel] = {
-    channelService.createChannel(ChannelCreate(channelId, service, guildId, displayName))
-      .map(_.toChannel)
+  private def createChannel(service: Service, channelId: String, guild: Guild, displayName: String): IO[Problem, Channel] = {
+    channelService.createChannel(ChannelCreate(channelId, service, guild.id, displayName))
+      .map(createChannel(_, guild))
       .mapError(Problem(_))
   }
 
@@ -41,27 +43,36 @@ case class ChannelLogicLive(
     .foldZIO(
       Problem.applyZIO(_),
       {
-        case Some(channelEntity) => ZIO.succeed(channelEntity.toChannel)
+        case Some(channelEntity) => guildLogic.getGuild(channelEntity.guildId)
+          .map(guild => createChannel(channelEntity, guild))
         case _ => ZIO.fail(NotFoundProblem("channel", s"Failed to find Channel for $id"))
       }
     )
+  
+  private def createChannel(channelEntity: ChannelEntity, guild: Guild): Channel = ChannelImpl(
+    channelEntity.id,
+    channelEntity.channelId,
+    channelEntity.service,
+    guild,
+    channelEntity.displayName
+  )
 }
 
 case class ChannelLogicCachedLive(
   cacheById: Cache[Long, Problem, Channel],
-  cacheByChannel: Cache[(Service, String, Option[String], String), Problem, Channel]
+  cacheByChannel: Cache[(Service, String, Guild, String), Problem, Channel]
 ) extends ChannelLogic {
 
   override def getChannel(id: Long): IO[Problem, Channel] = cacheById.get(id)
 
-  override def findChannelForService(service: Service, channelId: String, guildId: Option[String], displayName: String): IO[Problem, Channel] =
-    cacheByChannel.get(service, channelId, guildId, displayName)
+  override def findChannelForService(service: Service, channelId: String, guild: Guild, displayName: String): IO[Problem, Channel] =
+    cacheByChannel.get(service, channelId, guild, displayName)
 }
 
 object ChannelLogic {
-  val live: URLayer[ChannelService, ChannelLogic] = ZLayer.fromFunction(ChannelLogicLive(_))
+  val live: URLayer[ChannelService & GuildLogic, ChannelLogic] = ZLayer.fromFunction(ChannelLogicLive.apply)
 
-  val cachedLive: ZLayer[ChannelService, Nothing, ChannelLogicCachedLive] = live >>> ZLayer.fromZIO(
+  val cachedLive: URLayer[ChannelService & GuildLogic, ChannelLogicCachedLive] = live >>> ZLayer.fromZIO(
     {
       for {
         channelLogic <- ZIO.service[ChannelLogic]
@@ -71,7 +82,7 @@ object ChannelLogic {
         ) {
           CacheHelper.handleTTL(_)
         }
-        cacheByChannelInfo <- Cache.makeWith[(Service, String, Option[String], String), Any, Problem, Channel](
+        cacheByChannelInfo <- Cache.makeWith[(Service, String, Guild, String), Any, Problem, Channel](
           capacity = Int.MaxValue,
           lookup = Lookup(key => channelLogic.findChannelForService(key._1, key._2, key._3, key._4))
         ) {

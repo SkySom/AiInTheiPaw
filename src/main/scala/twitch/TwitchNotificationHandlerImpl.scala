@@ -2,7 +2,7 @@ package io.sommers.aiintheipaw
 package twitch
 
 import command.CommandManager
-import logic.{ChannelLogic, UserLogic}
+import logic.{ChannelLogic, GuildLogic, UserLogic}
 import model.problem.{Problem, ProblemException}
 import model.service.Service.Twitch
 
@@ -14,13 +14,15 @@ import zio.{IO, URLayer, ZIO, ZLayer}
 case class TwitchNotificationHandlerImpl(
   channelLogic: ChannelLogic,
   userLogic: UserLogic,
-  commandManager: CommandManager
+  commandManager: CommandManager,
+  guildLogic: GuildLogic
 ) extends TwitchNotificationHandler {
 
   override def handleNotification[TE](subscription: Subscription, event: TE): IO[Throwable, Unit] =
     ZIO.whenCase[Any, Problem, TE, Unit](event) {
       case channelChatMessage: ChannelChatMessage => for {
-        channel <- channelLogic.findChannelForService(Twitch, channelChatMessage.broadcasterUserId, None, channelChatMessage.broadcasterUserName)
+        guild <- guildLogic.findGuildForService(Twitch, channelChatMessage.broadcasterUserId, channelChatMessage.broadcasterUserName)
+        channel <- channelLogic.findChannelForService(Twitch, channelChatMessage.broadcasterUserId, guild, channelChatMessage.broadcasterUserName)
         user <- userLogic.findUserForService(Twitch, channelChatMessage.chatterUserId, channelChatMessage.chatterUserName)
         _ <- ZIO.log(s"Channel: $channel, User: $user")
         _ <- handleChatMessage(channelChatMessage)
@@ -33,6 +35,6 @@ case class TwitchNotificationHandlerImpl(
 }
 
 object TwitchNotificationHandlerImpl {
-  val layer: URLayer[ChannelLogic & UserLogic & CommandManager, TwitchNotificationHandler] =
-    ZLayer.fromFunction(TwitchNotificationHandlerImpl(_, _, _))
+  val layer: URLayer[ChannelLogic & UserLogic & CommandManager & GuildLogic, TwitchNotificationHandler] =
+    ZLayer.fromFunction(TwitchNotificationHandlerImpl.apply)
 }
