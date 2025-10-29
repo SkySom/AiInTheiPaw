@@ -1,11 +1,11 @@
 package io.sommers.aiintheipaw
-package model.channel.setting
+package model.setting
 
 import model.problem.Problem
 
 import zio.IO
 
-trait ChannelSetting[T] {
+trait BotSetting[T] {
   val key: String
 
   def readFrom(value: String): IO[Problem, T]

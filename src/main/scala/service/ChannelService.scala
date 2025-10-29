@@ -50,6 +50,8 @@ trait ChannelService {
   def getChannel(id: Long): Task[Option[ChannelEntity]]
 
   def getChannel(service: Service, channelId: String, guildId: Long): Task[Option[ChannelEntity]]
+  
+  def getChannels(guildId: Long): Task[Seq[ChannelEntity]]
 
   def createChannel(channelCreate: ChannelCreate): Task[ChannelEntity]
 
@@ -89,6 +91,11 @@ case class ChannelServiceLive(
       .headOption
     )
   }
+
+  override def getChannels(guildId: Long): Task[Seq[ChannelEntity]] = databaseZIO.run(
+    channelQuery.filter(_.guildId === guildId)
+      .result
+  )
 
   override def updateChannel(channelEntity: ChannelEntity): Task[Int] = {
     databaseZIO.run(channelQuery.update(channelEntity))

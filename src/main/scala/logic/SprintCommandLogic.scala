@@ -4,8 +4,8 @@ package logic
 import event.EventScheduler
 import logic.message.MessageLogic
 import model.channel.Channel
-import model.channel.setting.DurationChannelSetting
 import model.problem.{InvalidValueProblem, Problem, ThrowableProblem}
+import model.setting.DurationBotSetting
 import model.sprint.{Sprint, SprintStatus}
 import model.user.User
 import util.Enrichment.EnrichOption
@@ -26,7 +26,7 @@ trait SprintCommandLogic {
 case class SprintCommandLogicLive(
   sprintLogic: SprintLogic,
   sprintConfig: SprintConfig,
-  channelSettingLogic: ChannelSettingLogic,
+  channelSettingLogic: BotSettingLogic,
   messageLogic: MessageLogic,
   localizer: Localizer
 ) extends SprintCommandLogic {
@@ -59,7 +59,7 @@ case class SprintCommandLogicLive(
 }
 
 object SprintCommandLogic {
-  val live: URLayer[SprintLogic & SprintConfig & ChannelSettingLogic & MessageLogic & Localizer, SprintCommandLogic] = 
+  val live: URLayer[SprintLogic & SprintConfig & BotSettingLogic & MessageLogic & Localizer, SprintCommandLogic] =
     ZLayer.fromFunction(SprintCommandLogicLive.apply)
 }
 
@@ -77,9 +77,9 @@ object SprintConfig {
     )
   )
 
-  val signUpSetting: DurationChannelSetting = DurationChannelSetting("sprint.sign_up.duration")
-  val inProgressSetting: DurationChannelSetting = DurationChannelSetting("sprint.in_progress.duration")
-  val awaitingCountsSetting: DurationChannelSetting = DurationChannelSetting("sprint.awaiting_counts.duration")
-  val maxInProgressSetting: DurationChannelSetting = DurationChannelSetting("sprint.in_progress.max_duration")
+  val signUpSetting: DurationBotSetting = DurationBotSetting("sprint.sign_up.duration")
+  val inProgressSetting: DurationBotSetting = DurationBotSetting("sprint.in_progress.duration")
+  val awaitingCountsSetting: DurationBotSetting = DurationBotSetting("sprint.awaiting_counts.duration")
+  val maxInProgressSetting: DurationBotSetting = DurationBotSetting("sprint.in_progress.max_duration")
 
 }

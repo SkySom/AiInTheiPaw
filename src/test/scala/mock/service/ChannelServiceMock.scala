@@ -23,6 +23,13 @@ class ChannelServiceMock extends ChannelService {
         .map(_._2)
     )
 
+  override def getChannels(guildId: Long): Task[Seq[ChannelEntity]] =
+    ZIO.succeed(
+      channels.values
+        .filter(_.guildId == guildId)
+        .toSeq
+    )
+
   override def createChannel(channelCreate: ChannelCreate): Task[ChannelEntity] = {
     val id = channels.keys.maxOption.getOrElse(1L)
     val channel = ChannelEntity(

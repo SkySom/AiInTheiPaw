@@ -1,5 +1,5 @@
 package io.sommers.aiintheipaw
-package model.channel.setting
+package model.setting
 
 import model.problem.{Problem, ThrowableProblem}
 
@@ -7,9 +7,9 @@ import zio.{Duration, IO, ZIO}
 
 import java.time.Duration as JavaDuration
 
-case class DurationChannelSetting(
+case class DurationBotSetting(
   override val key: String
-) extends ChannelSetting[Duration] {
+) extends BotSetting[Duration] {
   override def readFrom(value: String): IO[Problem, Duration] = {
     ZIO.attempt(Duration.fromJava(JavaDuration.parse(value)))
       .mapError(ThrowableProblem(_))

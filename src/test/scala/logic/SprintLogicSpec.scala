@@ -6,7 +6,7 @@ import eventhandler.SprintEventHandler
 import generator.{TestChannelGenerator, TestGuildGenerator, TestUserGenerator}
 import logic.SprintLogicSpec.test
 import mock.MessageLogicMock
-import mock.service.{ChannelServiceMock, ChannelSettingServiceMock, GuildServiceMock, SprintServiceMock, UserServiceMock}
+import mock.service.{ChannelServiceMock, BotSettingServiceMock, GuildServiceMock, SprintServiceMock, UserServiceMock}
 import model.problem.{InvalidValueProblem, Problem}
 import model.sprint.SprintStatus.{InProgress, SignUp}
 import route.AiTestClient
@@ -68,9 +68,9 @@ object SprintLogicSpec extends ZIOSpecDefault {
     MessageLogicMock.mock,
     ResourceProvider.resourceBundleProvider("localization/localization") >>> Localizer.live,
     SprintCommandLogic.live,
-    ChannelSettingLogic.live,
+    BotSettingLogic.live,
     ZLayer.succeed(SprintConfig(1.minute, 1.minute, 1.minute, 1.minute)),
-    ChannelSettingServiceMock.mock,
+    BotSettingServiceMock.mock,
     GuildLogic.live,
     GuildServiceMock.mock
   )

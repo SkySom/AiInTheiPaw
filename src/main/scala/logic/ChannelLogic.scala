@@ -14,6 +14,8 @@ import zio.{IO, URLayer, ZIO, ZLayer}
 
 trait ChannelLogic {
   def getChannel(id: Long): IO[Problem, Channel]
+  
+  def getChannels(guild: Guild): IO[Problem, Seq[Channel]]
 
   def findChannelForService(service: Service, channelId: String, guild: Guild, displayName: String): IO[Problem, Channel]
 }
@@ -48,6 +50,11 @@ case class ChannelLogicLive(
         case _ => ZIO.fail(NotFoundProblem("channel", s"Failed to find Channel for $id"))
       }
     )
+
+  override def getChannels(guild: Guild): IO[Problem, Seq[Channel]] = {
+    channelService.getChannels(guild.id)
+      .mapBoth(Problem(_), _.map(createChannel(_, guild)))
+  }
   
   private def createChannel(channelEntity: ChannelEntity, guild: Guild): Channel = ChannelImpl(
     channelEntity.id,
@@ -60,13 +67,18 @@ case class ChannelLogicLive(
 
 case class ChannelLogicCachedLive(
   cacheById: Cache[Long, Problem, Channel],
-  cacheByChannel: Cache[(Service, String, Guild, String), Problem, Channel]
+  cacheByChannel: Cache[(Service, String, Guild, String), Problem, Channel],
+  channelLogic: ChannelLogic
 ) extends ChannelLogic {
 
   override def getChannel(id: Long): IO[Problem, Channel] = cacheById.get(id)
 
   override def findChannelForService(service: Service, channelId: String, guild: Guild, displayName: String): IO[Problem, Channel] =
     cacheByChannel.get(service, channelId, guild, displayName)
+
+  //TODO: Figure out how best to handle this, since it's not easy to tell if this requires invalidation after 
+  // findChannelForService calls
+  override def getChannels(guild: Guild): IO[Problem, Seq[Channel]] = channelLogic.getChannels(guild)
 }
 
 object ChannelLogic {
@@ -88,7 +100,7 @@ object ChannelLogic {
         ) {
           CacheHelper.handleTTL(_)
         }
-      } yield ChannelLogicCachedLive(cacheById, cacheByChannelInfo)
+      } yield ChannelLogicCachedLive(cacheById, cacheByChannelInfo, channelLogic)
     }
   )
 }

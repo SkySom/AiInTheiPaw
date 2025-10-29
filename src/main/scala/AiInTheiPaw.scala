@@ -1,17 +1,17 @@
 package io.sommers.aiintheipaw
 
 import command.CommandManager
+import command.sprint.SprintCommandGroup
+import command.util.UtilCommandGroup
+import event.{EventRouter, EventScheduler, ZIOEventScheduler}
+import eventhandler.SprintEventHandler
 import http.WebServer
 import logic.message.{MessageLogic, TwitchServiceMessageLogic}
-import logic.{ChannelLogic, ChannelSettingLogic, GuildLogic, SprintCommandLogic, SprintCommandLogicLive, SprintConfig, SprintLogic, UserLogic}
+import logic.*
 import route.{AiClient, EventRouterRoutes, MessageRoutes}
-import service.{ChannelServiceLive, ChannelSettingService, GuildService, SprintService, UserServiceLive}
+import service.*
 import twitch.TwitchNotificationHandlerImpl
 
-import io.sommers.aiintheipaw.command.sprint.SprintCommandGroup
-import io.sommers.aiintheipaw.command.util.UtilCommandGroup
-import io.sommers.aiintheipaw.event.{EventRouter, EventScheduler, ZIOEventScheduler}
-import io.sommers.aiintheipaw.eventhandler.SprintEventHandler
 import io.sommers.zio.localize.{Localizer, ResourceProvider}
 import io.sommers.zio.slick.DatabaseZIO
 import io.sommers.zio.twitch.ZIOTwitchLayers
@@ -57,24 +57,27 @@ object AiInTheiPaw extends ZIOAppDefault {
       routeGroupLayers(),
       SprintConfig.live,
       SprintCommandLogic.live,
-      ChannelSettingLogic.cachedLive,
-      ChannelSettingService.live,
+      BotSettingLogic.cachedLive,
+      BotSettingService.live,
       GuildLogic.live,
       GuildService.live
     )
   }
-  
+
   private def eventHandlerLayers() = ZLayer.collectAll(List(
     SprintEventHandler.live
-  ))
-  
+  )
+  )
+
   private def routeGroupLayers() = ZLayer.collectAll(List(
     MessageRoutes.live,
     EventRouterRoutes.live
-  ))
-  
+  )
+  )
+
   private def commandGroupLayers() = ZLayer.collectAll(List(
-      SprintCommandGroup.fullLayer,
-      UtilCommandGroup.fullLayer
-  ))
+    SprintCommandGroup.fullLayer,
+    UtilCommandGroup.fullLayer
+  )
+  )
 }

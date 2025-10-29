@@ -1,11 +1,10 @@
 package io.sommers.aiintheipaw
 package command
 
-import model.problem.{InvalidValueProblem, Problem, ThrowableProblem}
+import model.problem.{InvalidValueProblem, Problem}
 
-import zio.{Duration, IO, Task, Trace, ZIO}
+import zio.{Duration, IO, Trace, ZIO}
 
-import java.util.concurrent.TimeUnit
 import scala.util.Try
 import scala.util.matching.Regex
 
@@ -51,10 +50,10 @@ case class DurationCommandOption(
     input match {
       case numberPattern(duration) => Try(duration.toDouble)
         .fold(
-          _ => ZIO.fail(InvalidValueProblem("$input is not a valid decimal number")),
+          _ => ZIO.fail(InvalidValueProblem(s"$input is not a valid decimal number")),
           decimalMinutes => ZIO.succeed(Duration.fromSeconds(Math.ceil(decimalMinutes * 60).toLong))
         )
-      case _ => ZIO.fail(InvalidValueProblem("$input is not a valid duration"))
+      case _ => ZIO.fail(InvalidValueProblem(s"$input is not a valid duration"))
     }
   }
 
