@@ -6,8 +6,8 @@ import command.util.UtilCommandGroup
 import event.{EventRouter, EventScheduler, ZIOEventScheduler}
 import eventhandler.SprintEventHandler
 import http.WebServer
-import logic.message.{MessageLogic, TwitchServiceMessageLogic}
 import logic.*
+import logic.message.{MessageLogic, TwitchServiceMessageLogic}
 import route.{AiClient, EventRouterRoutes, MessageRoutes}
 import service.*
 import twitch.TwitchNotificationHandlerImpl
@@ -15,14 +15,11 @@ import twitch.TwitchNotificationHandlerImpl
 import io.sommers.zio.localize.{Localizer, ResourceProvider}
 import io.sommers.zio.slick.DatabaseZIO
 import io.sommers.zio.twitch.ZIOTwitchLayers
-import io.sommers.zio.twitch.server.{TwitchMessageHandler, TwitchWebHookConfig}
 import slick.jdbc.PostgresProfile
 import zio.config.typesafe.TypesafeConfigProvider
 import zio.http.{Client, Server}
 import zio.logging.backend.SLF4J
 import zio.{Runtime, Scope, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
-
-import java.util.Locale
 
 object AiInTheiPaw extends ZIOAppDefault {
   override val bootstrap: ZLayer[Any, Nothing, Unit] = Runtime.setConfigProvider(TypesafeConfigProvider.fromResourcePath(true)) ++
